@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "191917209161",
+    "firebase_url": "https://a-one-restaurant-773a9-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "a-one-restaurant-773a9",
+    "storage_bucket": "a-one-restaurant-773a9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:191917209161:android:848cb74795babf3986b198",
+        "android_client_info": {
+          "package_name": "com.example.aonerestaurant"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "191917209161-v4b74lh5fa369br35i870ekcb6g7giqo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDqEaZ_k6F5TPF7wX7D590RZhbp10CyA_M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "191917209161-v4b74lh5fa369br35i870ekcb6g7giqo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
