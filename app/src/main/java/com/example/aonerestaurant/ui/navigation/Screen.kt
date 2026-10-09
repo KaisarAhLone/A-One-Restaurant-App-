@@ -7,4 +7,5 @@ sealed class Screen {
     data object Menu : Screen()
     data object Cart : Screen()
     data object OrderSuccess : Screen()
+    data object OwnerDashboard : Screen()
 }

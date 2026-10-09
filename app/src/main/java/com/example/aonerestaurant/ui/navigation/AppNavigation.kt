@@ -16,6 +16,7 @@ import com.example.aonerestaurant.ui.screen.home.MainTab
 import com.example.aonerestaurant.ui.screen.login.LoginScreen
 import com.example.aonerestaurant.ui.screen.menu.MenuScreen
 import com.example.aonerestaurant.ui.screen.order.OrderSuccessScreen
+import com.example.aonerestaurant.ui.screen.owner.OwnerDashboardScreen
 import com.example.aonerestaurant.ui.screen.signup.SignUpScreen
 
 @Composable
@@ -47,6 +48,7 @@ fun AppNavigation(
                 onNavigateToSignUp = { currentScreen = Screen.SignUp },
                 onSkipLogin = { currentScreen = Screen.Home },
                 onGoogleSignIn = { currentScreen = Screen.Home },
+                onOwnerLoginSuccess = { currentScreen = Screen.OwnerDashboard },
                 modifier = modifier
             )
         }
@@ -133,6 +135,13 @@ fun AppNavigation(
                     cartMap.clear()
                     currentScreen = Screen.Home
                 },
+                modifier = modifier
+            )
+        }
+
+        is Screen.OwnerDashboard -> {
+            OwnerDashboardScreen(
+                onLogout = { currentScreen = Screen.Login },
                 modifier = modifier
             )
         }

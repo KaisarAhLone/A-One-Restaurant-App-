@@ -1,5 +1,6 @@
 package com.example.aonerestaurant.data.repository
 
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KebabDining
 import androidx.compose.material.icons.filled.LocalPizza
@@ -17,7 +18,7 @@ object RestaurantRepository {
         FoodCategory("4", "Chicken Curry", Icons.Default.LocalPizza)
     )
 
-    val popularItems = listOf(
+    val popularItems = mutableStateListOf(
         FoodItem(
             id = "p1",
             name = "Chicken Biryani",
@@ -39,7 +40,7 @@ object RestaurantRepository {
         )
     )
 
-    val specialCombos = listOf(
+    val specialCombos = mutableStateListOf(
         SpecialCombo(
             id = "c1",
             name = "Biryani Combo",
@@ -47,4 +48,12 @@ object RestaurantRepository {
             price = 300
         )
     )
+
+    fun addFoodItem(item: FoodItem) {
+        popularItems.add(0, item)
+    }
+
+    fun addSpecialCombo(combo: SpecialCombo) {
+        specialCombos.add(0, combo)
+    }
 }
