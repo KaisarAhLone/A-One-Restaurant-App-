@@ -44,6 +44,18 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
+    val filteredItems = remember(selectedCategoryId, searchQuery, RestaurantRepository.foodItems.size) {
+        RestaurantRepository.foodItems.filter { item ->
+            val matchesCategory = item.categoryId == selectedCategoryId
+            val matchesSearch = searchQuery.isBlank() || item.name.contains(searchQuery, ignoreCase = true) || item.description.contains(searchQuery, ignoreCase = true)
+            matchesCategory && matchesSearch
+        }
+    }
+
+    val selectedCategoryName = remember(selectedCategoryId) {
+        RestaurantRepository.categories.find { it.id == selectedCategoryId }?.name ?: "Dishes"
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -96,9 +108,12 @@ fun HomeScreen(
 
             HeroBannerCard(
                 onOrderNowClick = {
-                    onAddToCart(RestaurantRepository.popularItems.first())
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Added Chicken Biryani to cart!")
+                    val firstItem = RestaurantRepository.foodItems.firstOrNull()
+                    if (firstItem != null) {
+                        onAddToCart(firstItem)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Added ${firstItem.name} to cart!")
+                        }
                     }
                 }
             )
@@ -113,39 +128,74 @@ fun HomeScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            PopularSection(
-                popularItems = RestaurantRepository.popularItems,
-                onAddToCart = { item ->
-                    onAddToCart(item)
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+            if (filteredItems.isNotEmpty()) {
+                PopularSection(
+                    popularItems = filteredItems,
+                    onAddToCart = { item ->
+                        onAddToCart(item)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                        }
+                    },
+                    onSeeAllClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Viewing all $selectedCategoryName items")
+                        }
                     }
-                },
-                onSeeAllClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Viewing all popular items")
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            if (RestaurantRepository.popularItems.isNotEmpty() && selectedCategoryId != "1") {
+                PopularSection(
+                    popularItems = RestaurantRepository.popularItems,
+                    onAddToCart = { item ->
+                        onAddToCart(item)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                        }
+                    },
+                    onSeeAllClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Viewing popular items")
+                        }
                     }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            if (RestaurantRepository.specialCombos.isNotEmpty()) {
+                SpecialComboSection(
+                    combos = RestaurantRepository.specialCombos,
+                    onAddCombo = { combo ->
+                        onAddComboToCart(combo)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Added ${combo.name} to cart!")
+                        }
+                    },
+                    onSeeAllClick = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Viewing all special combos")
+                        }
+                    }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+            }
+
+            if (RestaurantRepository.todaysSpecials.isNotEmpty()) {
+                Box(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    RecommendedSection(
+                        foodItems = RestaurantRepository.todaysSpecials,
+                        onAddToCart = { item ->
+                            onAddToCart(item)
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                            }
+                        }
+                    )
                 }
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            SpecialComboSection(
-                combos = RestaurantRepository.specialCombos,
-                onAddCombo = { combo ->
-                    onAddComboToCart(combo)
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Added ${combo.name} to cart!")
-                    }
-                },
-                onSeeAllClick = {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Viewing all special combos")
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+            }
         }
     }
 }

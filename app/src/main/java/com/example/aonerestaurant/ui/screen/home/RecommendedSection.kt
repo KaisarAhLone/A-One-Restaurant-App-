@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,7 +14,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.RestaurantMenu
+import androidx.compose.material.icons.filled.KebabDining
+import androidx.compose.material.icons.filled.LocalPizza
+import androidx.compose.material.icons.filled.RamenDining
+import androidx.compose.material.icons.filled.SetMeal
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,10 +31,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.aonerestaurant.data.model.FoodItem
 
 @Composable
@@ -65,6 +71,13 @@ fun RecommendedItemCard(
     onAddToCart: (FoodItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val foodIcon = when (foodItem.categoryId) {
+        "2" -> Icons.Default.KebabDining
+        "3" -> Icons.Default.SetMeal
+        "4" -> Icons.Default.LocalPizza
+        else -> Icons.Default.RamenDining
+    }
+
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -85,12 +98,21 @@ fun RecommendedItemCard(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.RestaurantMenu,
-                    contentDescription = null,
-                    modifier = Modifier.size(36.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                if (!foodItem.imageUri.isNullOrBlank()) {
+                    AsyncImage(
+                        model = foodItem.imageUri,
+                        contentDescription = foodItem.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = foodIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(36.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -142,7 +164,7 @@ fun RecommendedItemCard(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "$${foodItem.price}",
+                    text = "₹${foodItem.price.toInt()}",
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary

@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,9 +25,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.aonerestaurant.data.model.SpecialCombo
 
 @Composable
@@ -54,12 +57,21 @@ fun SpecialComboCard(
                     .background(Color(0xFF2A080C)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Default.RamenDining,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = Color(0xFFFFB703)
-                )
+                if (!combo.imageUri.isNullOrBlank()) {
+                    AsyncImage(
+                        model = combo.imageUri,
+                        contentDescription = combo.name,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.RamenDining,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = Color(0xFFFFB703)
+                    )
+                }
             }
 
             Column(

@@ -4,5 +4,5 @@ import com.example.aonerestaurant.data.model.FoodItem
 
 object MenuRepository {
     val items: List<FoodItem>
-        get() = RestaurantRepository.popularItems
+        get() = RestaurantRepository.foodItems
 }

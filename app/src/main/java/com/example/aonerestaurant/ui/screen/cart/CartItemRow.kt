@@ -56,7 +56,7 @@ fun CartItemRow(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "$${cartItem.foodItem.price} each",
+                    text = "₹${cartItem.foodItem.price.toInt()} each",
                     fontSize = 13.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -88,7 +88,7 @@ fun CartItemRow(
             }
 
             Text(
-                text = "$${String.format("%.2f", cartItem.quantity * cartItem.foodItem.price)}",
+                text = "₹${(cartItem.quantity * cartItem.foodItem.price).toInt()}",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,

@@ -100,7 +100,7 @@ fun MenuScreen(
                                 }
 
                                 Text(
-                                    text = "View Cart • $${String.format("%.2f", totalPrice)}",
+                                    text = "View Cart • ₹${totalPrice.toInt()}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 16.sp
                                 )

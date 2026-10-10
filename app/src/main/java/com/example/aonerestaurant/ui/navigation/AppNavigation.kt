@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.example.aonerestaurant.data.model.CartItem
 import com.example.aonerestaurant.data.model.FoodItem
-import com.example.aonerestaurant.data.repository.MenuRepository
+import com.example.aonerestaurant.data.repository.RestaurantRepository
 import com.example.aonerestaurant.ui.screen.cart.CartScreen
 import com.example.aonerestaurant.ui.screen.home.HomeScreen
 import com.example.aonerestaurant.ui.screen.home.MainTab
@@ -28,13 +28,17 @@ fun AppNavigation(
 
     val totalCartCount = cartMap.values.sum()
 
-    val cartItemsList = remember(cartMap.toMap()) {
-        val allItems = MenuRepository.items + FoodItem(
-            id = "c1",
-            name = "Biryani Combo",
-            price = 300.0,
-            description = "Chicken Biryani + 2 Pcs Tandoori"
-        )
+    val cartItemsList = remember(cartMap.toMap(), RestaurantRepository.foodItems.size, RestaurantRepository.specialCombos.size) {
+        val comboAsFoodItems = RestaurantRepository.specialCombos.map { combo ->
+            FoodItem(
+                id = combo.id,
+                name = combo.name,
+                price = combo.price.toDouble(),
+                description = combo.description,
+                imageUri = combo.imageUri
+            )
+        }
+        val allItems = RestaurantRepository.foodItems + comboAsFoodItems
         allItems.mapNotNull { item ->
             val count = cartMap[item.id] ?: 0
             if (count > 0) CartItem(item, count) else null

@@ -50,7 +50,7 @@ fun CartScreen(
 ) {
     var deliveryAddress by remember { mutableStateOf("") }
     val subtotal = cartItems.sumOf { it.quantity * it.foodItem.price }
-    val deliveryFee = if (cartItems.isNotEmpty()) 2.00 else 0.00
+    val deliveryFee = if (cartItems.isNotEmpty()) 30.0 else 0.0
     val total = subtotal + deliveryFee
 
     Scaffold(
@@ -130,7 +130,7 @@ fun CartScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(text = "Items Subtotal")
-                                    Text(text = "$${String.format("%.2f", subtotal)}")
+                                    Text(text = "₹${subtotal.toInt()}")
                                 }
 
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -140,7 +140,7 @@ fun CartScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
                                     Text(text = "Delivery Fee")
-                                    Text(text = "$${String.format("%.2f", deliveryFee)}")
+                                    Text(text = "₹${deliveryFee.toInt()}")
                                 }
 
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp))
@@ -155,7 +155,7 @@ fun CartScreen(
                                         fontSize = 18.sp
                                     )
                                     Text(
-                                        text = "$${String.format("%.2f", total)}",
+                                        text = "₹${total.toInt()}",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 18.sp,
                                         color = MaterialTheme.colorScheme.primary
@@ -169,7 +169,7 @@ fun CartScreen(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 CustomButton(
-                    text = "Place Order • $${String.format("%.2f", total)}",
+                    text = "Place Order • ₹${total.toInt()}",
                     onClick = onPlaceOrder,
                     enabled = deliveryAddress.isNotBlank()
                 )
