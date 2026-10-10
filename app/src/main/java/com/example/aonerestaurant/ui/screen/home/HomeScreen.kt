@@ -44,8 +44,9 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    val filteredItems = remember(selectedCategoryId, searchQuery, RestaurantRepository.foodItems.size) {
-        RestaurantRepository.foodItems.filter { item ->
+    val allFoodItems = RestaurantRepository.foodItems
+    val filteredItems = remember(selectedCategoryId, searchQuery, allFoodItems.size, allFoodItems.toList()) {
+        allFoodItems.filter { item ->
             val matchesCategory = item.categoryId == selectedCategoryId
             val matchesSearch = searchQuery.isBlank() || item.name.contains(searchQuery, ignoreCase = true) || item.description.contains(searchQuery, ignoreCase = true)
             matchesCategory && matchesSearch
