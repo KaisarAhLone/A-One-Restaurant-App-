@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -15,7 +16,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.KebabDining
+import androidx.compose.material.icons.filled.LocalPizza
 import androidx.compose.material.icons.filled.RamenDining
+import androidx.compose.material.icons.filled.SetMeal
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -28,15 +32,27 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.aonerestaurant.data.model.FoodItem
 
 @Composable
 fun HeroBannerCard(
-    onOrderNowClick: () -> Unit,
+    specialItem: FoodItem?,
+    onOrderNowClick: (FoodItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val foodIcon = when (specialItem?.categoryId) {
+        "2" -> Icons.Default.KebabDining
+        "3" -> Icons.Default.SetMeal
+        "4" -> Icons.Default.LocalPizza
+        else -> Icons.Default.RamenDining
+    }
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -74,7 +90,7 @@ fun HeroBannerCard(
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = "Our Special 👑",
+                                text = "Today's Special Offer 👑",
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -84,64 +100,81 @@ fun HeroBannerCard(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = "CHICKEN\nBIRYANI",
-                            fontSize = 22.sp,
+                            text = specialItem?.name?.uppercase() ?: "TODAY'S SPECIAL OFFER",
+                            fontSize = 20.sp,
                             fontWeight = FontWeight.Black,
                             color = Color.White,
-                            lineHeight = 24.sp
+                            lineHeight = 22.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = "RICH FLAVORS,\nUNFORGETTABLE TASTE",
-                            fontSize = 10.sp,
+                            text = if (specialItem != null) "₹${specialItem.price.toInt()} • ${specialItem.description}" else "Add daily special offer from Owner Dashboard!",
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFFFB703),
-                            lineHeight = 12.sp
+                            lineHeight = 13.sp,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
                         )
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Button(
-                            onClick = onOrderNowClick,
-                            shape = RoundedCornerShape(20.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFD90429),
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
+                        if (specialItem != null) {
+                            Button(
+                                onClick = { onOrderNowClick(specialItem) },
+                                shape = RoundedCornerShape(20.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFD90429),
+                                    contentColor = Color.White
+                                )
                             ) {
-                                Text(
-                                    text = "Order Now",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Order Now • ₹${specialItem.price.toInt()}",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
                             }
                         }
                     }
 
+                    Spacer(modifier = Modifier.width(12.dp))
+
                     Box(
                         modifier = Modifier
-                            .size(130.dp)
+                            .size(120.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF2E0508)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.RamenDining,
-                            contentDescription = null,
-                            modifier = Modifier.size(80.dp),
-                            tint = Color(0xFFFFB703)
-                        )
+                        if (!specialItem?.imageUri.isNullOrBlank()) {
+                            AsyncImage(
+                                model = specialItem.imageUri,
+                                contentDescription = specialItem.name,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Icon(
+                                imageVector = foodIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(70.dp),
+                                tint = Color(0xFFFFB703)
+                            )
+                        }
                     }
                 }
 

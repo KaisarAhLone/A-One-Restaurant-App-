@@ -43,11 +43,12 @@ import com.example.aonerestaurant.data.model.FoodItem
 fun RecommendedSection(
     foodItems: List<FoodItem>,
     onAddToCart: (FoodItem) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    title: String = "Special Combo Offers 🍱"
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Text(
-            text = "Recommended For You",
+            text = title,
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground

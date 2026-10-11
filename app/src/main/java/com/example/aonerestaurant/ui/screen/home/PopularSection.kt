@@ -26,7 +26,8 @@ fun PopularSection(
     popularItems: List<FoodItem>,
     onAddToCart: (FoodItem) -> Unit,
     onSeeAllClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    title: String = "Popular Items"
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
         Row(
@@ -37,7 +38,7 @@ fun PopularSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "Popular Items",
+                text = title,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF1D1E2C)

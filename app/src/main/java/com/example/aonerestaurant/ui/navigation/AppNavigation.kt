@@ -45,7 +45,7 @@ fun AppNavigation(
         }
     }
 
-    when (currentScreen) {
+    when (val screen = currentScreen) {
         is Screen.Login -> {
             LoginScreen(
                 onLoginSuccess = { currentScreen = Screen.Home },
@@ -68,9 +68,18 @@ fun AppNavigation(
         is Screen.Home -> {
             HomeScreen(
                 cartCount = totalCartCount,
+                cartMap = cartMap,
                 onAddToCart = { item ->
                     val currentCount = cartMap[item.id] ?: 0
                     cartMap[item.id] = currentCount + 1
+                },
+                onRemoveFromCart = { item ->
+                    val currentCount = cartMap[item.id] ?: 0
+                    if (currentCount > 1) {
+                        cartMap[item.id] = currentCount - 1
+                    } else {
+                        cartMap.remove(item.id)
+                    }
                 },
                 onAddComboToCart = { combo ->
                     val currentCount = cartMap[combo.id] ?: 0
@@ -79,18 +88,23 @@ fun AppNavigation(
                 onGoToCart = { currentScreen = Screen.Cart },
                 onNavigateToTab = { tab ->
                     when (tab) {
-                        MainTab.MENU -> currentScreen = Screen.Menu
+                        MainTab.MENU -> currentScreen = Screen.Menu()
                         MainTab.HOME -> {}
                         else -> {}
                     }
+                },
+                onCategoryClick = { categoryId ->
+                    currentScreen = Screen.Menu(categoryId = categoryId)
                 },
                 modifier = modifier
             )
         }
 
         is Screen.Menu -> {
+            val categoryIdParam = screen.categoryId
             MenuScreen(
                 cartMap = cartMap,
+                initialCategoryId = categoryIdParam,
                 onAddItem = { item ->
                     val currentCount = cartMap[item.id] ?: 0
                     cartMap[item.id] = currentCount + 1
@@ -107,6 +121,9 @@ fun AppNavigation(
                 onSignOut = {
                     cartMap.clear()
                     currentScreen = Screen.Login
+                },
+                onBackClick = {
+                    currentScreen = Screen.Home
                 },
                 modifier = modifier
             )

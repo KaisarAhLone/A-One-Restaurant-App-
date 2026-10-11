@@ -36,6 +36,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aonerestaurant.data.model.CartItem
 import com.example.aonerestaurant.data.model.FoodItem
+import com.example.aonerestaurant.data.model.Order
+import com.example.aonerestaurant.data.repository.OrderRepository
 import com.example.aonerestaurant.ui.components.CustomButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,7 +59,7 @@ fun CartScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(text = "My Cart") },
+                title = { Text(text = "My Cart", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
@@ -77,7 +79,7 @@ fun CartScreen(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Your Cart is Empty",
+                    text = "Your Cart is Empty 🛒",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -170,7 +172,19 @@ fun CartScreen(
 
                 CustomButton(
                     text = "Place Order • ₹${total.toInt()}",
-                    onClick = onPlaceOrder,
+                    onClick = {
+                        val summary = cartItems.joinToString(", ") { "${it.foodItem.name} (${it.quantity}x)" }
+                        val newOrder = Order(
+                            id = "ORD_" + System.currentTimeMillis().toString(),
+                            itemsSummary = summary,
+                            totalAmount = total,
+                            deliveryAddress = deliveryAddress,
+                            timestamp = System.currentTimeMillis(),
+                            status = "Preparing 🍳"
+                        )
+                        OrderRepository.placeOrder(newOrder)
+                        onPlaceOrder()
+                    },
                     enabled = deliveryAddress.isNotBlank()
                 )
             }

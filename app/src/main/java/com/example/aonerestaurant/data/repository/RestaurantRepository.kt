@@ -1,5 +1,6 @@
 package com.example.aonerestaurant.data.repository
 
+import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KebabDining
 import androidx.compose.material.icons.filled.LocalPizza
@@ -9,8 +10,12 @@ import androidx.compose.runtime.mutableStateListOf
 import com.example.aonerestaurant.data.model.FoodCategory
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.model.SpecialCombo
+import com.google.firebase.firestore.FirebaseFirestore
 
 object RestaurantRepository {
+    private const val TAG = "RestaurantRepository"
+    private val db: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
+
     val categories = listOf(
         FoodCategory("1", "Biryani", Icons.Default.RamenDining),
         FoodCategory("2", "Grilled", Icons.Default.KebabDining),
@@ -18,88 +23,9 @@ object RestaurantRepository {
         FoodCategory("4", "Chicken Curry", Icons.Default.LocalPizza)
     )
 
-    val foodItems = mutableStateListOf(
-        FoodItem(
-            id = "f1",
-            name = "Chicken Biryani",
-            price = 180.0,
-            description = "Aromatic basmati rice cooked with juicy marinated chicken and spices",
-            categoryId = "1",
-            rating = 4.8,
-            preparationTime = "15-20 min",
-            isPopular = true,
-            isTodaysSpecial = true
-        ),
-        FoodItem(
-            id = "f2",
-            name = "Mutton Dum Biryani",
-            price = 250.0,
-            description = "Slow cooked mutton tender pieces with herbs & fragrant basmati rice",
-            categoryId = "1",
-            rating = 4.9,
-            preparationTime = "20-25 min",
-            isPopular = true
-        ),
-        FoodItem(
-            id = "f3",
-            name = "Tandoori Chicken",
-            price = 220.0,
-            description = "Smoky grilled marinated chicken with roasted spices",
-            categoryId = "2",
-            rating = 4.7,
-            preparationTime = "15-20 min",
-            isPopular = true,
-            isTodaysSpecial = true
-        ),
-        FoodItem(
-            id = "f4",
-            name = "Malai Chicken Tikka",
-            price = 240.0,
-            description = "Mouth-melting cream and cashew marinated grilled chicken tikka",
-            categoryId = "2",
-            rating = 4.6,
-            preparationTime = "15 min"
-        ),
-        FoodItem(
-            id = "f5",
-            name = "Crispy Fried Chicken",
-            price = 200.0,
-            description = "Golden crunchy fried chicken with spicy seasoning",
-            categoryId = "3",
-            rating = 4.7,
-            preparationTime = "12-15 min",
-            isPopular = true
-        ),
-        FoodItem(
-            id = "f6",
-            name = "Crispy Chicken Wings",
-            price = 180.0,
-            description = "Deep fried crunchy wings served with garlic dip",
-            categoryId = "3",
-            rating = 4.5,
-            preparationTime = "10-12 min"
-        ),
-        FoodItem(
-            id = "f7",
-            name = "Butter Chicken Curry",
-            price = 230.0,
-            description = "Rich creamy tomato gravy with juicy grilled chicken pieces",
-            categoryId = "4",
-            rating = 4.9,
-            preparationTime = "15-20 min",
-            isPopular = true,
-            isTodaysSpecial = true
-        ),
-        FoodItem(
-            id = "f8",
-            name = "Kadai Chicken Curry",
-            price = 210.0,
-            description = "Spicy gravy with bell peppers, onions and fresh ground spices",
-            categoryId = "4",
-            rating = 4.6,
-            preparationTime = "15-20 min"
-        )
-    )
+    // Empty initial lists - completely empty menu by default
+    val foodItems = mutableStateListOf<FoodItem>()
+    val specialCombos = mutableStateListOf<SpecialCombo>()
 
     val popularItems: List<FoodItem>
         get() = foodItems.filter { it.isPopular }
@@ -107,34 +33,164 @@ object RestaurantRepository {
     val todaysSpecials: List<FoodItem>
         get() = foodItems.filter { it.isTodaysSpecial }
 
-    val specialCombos = mutableStateListOf(
-        SpecialCombo(
-            id = "c1",
-            name = "Special Biryani Combo",
-            description = "Chicken Biryani + 2 Pcs Tandoori Chicken",
-            price = 300
-        ),
-        SpecialCombo(
-            id = "c2",
-            name = "Curry & Tandoori Feast",
-            description = "Butter Chicken Curry + Tandoori Naan + Fried Wings",
-            price = 420
-        )
-    )
-
-    fun addFoodItem(item: FoodItem) {
-        foodItems.add(0, item)
+    init {
+        // Setup Firestore real-time listeners for foodItems and specialCombos
+        setupFirestoreListeners()
     }
 
-    fun addSpecialCombo(combo: SpecialCombo) {
-        specialCombos.add(0, combo)
+    private fun setupFirestoreListeners() {
+        try {
+            // Listen to foodItems collection in Firestore
+            db.collection("foodItems").addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error listening to foodItems in Firestore: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val fetchedItems = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            FoodItem(
+                                id = doc.getString("id") ?: doc.id,
+                                name = doc.getString("name") ?: "",
+                                price = doc.getDouble("price") ?: 0.0,
+                                description = doc.getString("description") ?: "",
+                                categoryId = doc.getString("categoryId") ?: "1",
+                                rating = doc.getDouble("rating") ?: 4.5,
+                                preparationTime = doc.getString("preparationTime") ?: "15-20 min",
+                                isPopular = doc.getBoolean("isPopular") ?: false,
+                                isTodaysSpecial = doc.getBoolean("isTodaysSpecial") ?: false,
+                                isCombo = doc.getBoolean("isCombo") ?: false,
+                                imageUri = doc.getString("imageUri")
+                            )
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error parsing FoodItem doc ${doc.id}: ${e.message}")
+                            null
+                        }
+                    }
+                    foodItems.clear()
+                    foodItems.addAll(fetchedItems)
+                }
+            }
+
+            // Listen to specialCombos collection in Firestore
+            db.collection("specialCombos").addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(TAG, "Error listening to specialCombos in Firestore: ${error.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null) {
+                    val fetchedCombos = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            SpecialCombo(
+                                id = doc.getString("id") ?: doc.id,
+                                name = doc.getString("name") ?: "",
+                                description = doc.getString("description") ?: "",
+                                price = doc.getLong("price")?.toInt() ?: 0,
+                                imageUri = doc.getString("imageUri")
+                            )
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error parsing SpecialCombo doc ${doc.id}: ${e.message}")
+                            null
+                        }
+                    }
+                    specialCombos.clear()
+                    specialCombos.addAll(fetchedCombos)
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing Firestore listeners: ${e.message}")
+        }
+    }
+
+    fun addFoodItem(item: FoodItem, onResult: ((Boolean, String) -> Unit)? = null) {
+        if (!foodItems.any { it.id == item.id }) {
+            foodItems.add(0, item)
+        }
+        addFoodItemToFirestore(item, onResult)
+    }
+
+    fun addSpecialCombo(combo: SpecialCombo, onResult: ((Boolean, String) -> Unit)? = null) {
+        if (!specialCombos.any { it.id == combo.id }) {
+            specialCombos.add(0, combo)
+        }
+        addSpecialComboToFirestore(combo, onResult)
     }
 
     fun removeFoodItem(item: FoodItem) {
         foodItems.remove(item)
+        try {
+            db.collection("foodItems").document(item.id).delete()
+                .addOnSuccessListener { Log.d(TAG, "Deleted food item from Firestore: ${item.name}") }
+                .addOnFailureListener { e -> Log.e(TAG, "Failed deleting food item: ${e.message}") }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting food item from Firestore: ${e.message}")
+        }
     }
 
     fun removeSpecialCombo(combo: SpecialCombo) {
         specialCombos.remove(combo)
+        try {
+            db.collection("specialCombos").document(combo.id).delete()
+                .addOnSuccessListener { Log.d(TAG, "Deleted combo from Firestore: ${combo.name}") }
+                .addOnFailureListener { e -> Log.e(TAG, "Failed deleting combo: ${e.message}") }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error deleting special combo from Firestore: ${e.message}")
+        }
+    }
+
+    private fun addFoodItemToFirestore(item: FoodItem, onResult: ((Boolean, String) -> Unit)? = null) {
+        try {
+            val itemMap = hashMapOf(
+                "id" to item.id,
+                "name" to item.name,
+                "price" to item.price,
+                "description" to item.description,
+                "categoryId" to item.categoryId,
+                "rating" to item.rating,
+                "preparationTime" to item.preparationTime,
+                "isPopular" to item.isPopular,
+                "isTodaysSpecial" to item.isTodaysSpecial,
+                "isCombo" to item.isCombo,
+                "imageUri" to (item.imageUri ?: "")
+            )
+            db.collection("foodItems").document(item.id).set(itemMap)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Successfully added ${item.name} to Firestore!")
+                    onResult?.invoke(true, "Successfully saved '${item.name}' to Firebase Firestore!")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Firestore write error for ${item.name}: ${e.message}")
+                    onResult?.invoke(false, "Firestore Error: ${e.message}")
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding food item to Firestore: ${e.message}")
+            onResult?.invoke(false, "Exception: ${e.message}")
+        }
+    }
+
+    private fun addSpecialComboToFirestore(combo: SpecialCombo, onResult: ((Boolean, String) -> Unit)? = null) {
+        try {
+            val comboMap = hashMapOf(
+                "id" to combo.id,
+                "name" to combo.name,
+                "description" to combo.description,
+                "price" to combo.price,
+                "imageUri" to (combo.imageUri ?: "")
+            )
+            db.collection("specialCombos").document(combo.id).set(comboMap)
+                .addOnSuccessListener {
+                    Log.d(TAG, "Successfully added combo ${combo.name} to Firestore!")
+                    onResult?.invoke(true, "Successfully saved combo '${combo.name}' to Firebase Firestore!")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Firestore write error for combo ${combo.name}: ${e.message}")
+                    onResult?.invoke(false, "Firestore Error: ${e.message}")
+                }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error adding special combo to Firestore: ${e.message}")
+            onResult?.invoke(false, "Exception: ${e.message}")
+        }
     }
 }
