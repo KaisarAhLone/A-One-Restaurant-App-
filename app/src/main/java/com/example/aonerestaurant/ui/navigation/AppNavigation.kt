@@ -1,5 +1,6 @@
 package com.example.aonerestaurant.ui.navigation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
@@ -16,7 +17,9 @@ import com.example.aonerestaurant.ui.screen.home.MainTab
 import com.example.aonerestaurant.ui.screen.login.LoginScreen
 import com.example.aonerestaurant.ui.screen.menu.MenuScreen
 import com.example.aonerestaurant.ui.screen.order.OrderSuccessScreen
+import com.example.aonerestaurant.ui.screen.orders.OrdersScreen
 import com.example.aonerestaurant.ui.screen.owner.OwnerDashboardScreen
+import com.example.aonerestaurant.ui.screen.profile.ProfileScreen
 import com.example.aonerestaurant.ui.screen.signup.SignUpScreen
 
 @Composable
@@ -27,6 +30,15 @@ fun AppNavigation(
     val cartMap = remember { mutableStateMapOf<String, Int>() }
 
     val totalCartCount = cartMap.values.sum()
+
+    // Smooth system back button navigation
+    BackHandler(enabled = currentScreen != Screen.Home && currentScreen != Screen.Login) {
+        currentScreen = when (currentScreen) {
+            is Screen.SignUp -> Screen.Login
+            is Screen.OwnerDashboard -> Screen.Login
+            else -> Screen.Home
+        }
+    }
 
     val cartItemsList = remember(cartMap.toMap(), RestaurantRepository.foodItems.size, RestaurantRepository.specialCombos.size) {
         val comboAsFoodItems = RestaurantRepository.specialCombos.map { combo ->
@@ -88,9 +100,10 @@ fun AppNavigation(
                 onGoToCart = { currentScreen = Screen.Cart },
                 onNavigateToTab = { tab ->
                     when (tab) {
-                        MainTab.MENU -> currentScreen = Screen.Menu()
                         MainTab.HOME -> {}
-                        else -> {}
+                        MainTab.MENU -> currentScreen = Screen.Menu()
+                        MainTab.ORDERS -> currentScreen = Screen.Orders
+                        MainTab.PROFILE -> currentScreen = Screen.Profile
                     }
                 },
                 onCategoryClick = { categoryId ->
@@ -125,6 +138,41 @@ fun AppNavigation(
                 onBackClick = {
                     currentScreen = Screen.Home
                 },
+                modifier = modifier
+            )
+        }
+
+        is Screen.Orders -> {
+            OrdersScreen(
+                onNavigateToTab = { tab ->
+                    when (tab) {
+                        MainTab.HOME -> currentScreen = Screen.Home
+                        MainTab.MENU -> currentScreen = Screen.Menu()
+                        MainTab.ORDERS -> {}
+                        MainTab.PROFILE -> currentScreen = Screen.Profile
+                    }
+                },
+                onBackClick = { currentScreen = Screen.Home },
+                modifier = modifier
+            )
+        }
+
+        is Screen.Profile -> {
+            ProfileScreen(
+                onNavigateToTab = { tab ->
+                    when (tab) {
+                        MainTab.HOME -> currentScreen = Screen.Home
+                        MainTab.MENU -> currentScreen = Screen.Menu()
+                        MainTab.ORDERS -> currentScreen = Screen.Orders
+                        MainTab.PROFILE -> {}
+                    }
+                },
+                onNavigateToOrders = { currentScreen = Screen.Orders },
+                onLogout = {
+                    cartMap.clear()
+                    currentScreen = Screen.Login
+                },
+                onBackClick = { currentScreen = Screen.Home },
                 modifier = modifier
             )
         }

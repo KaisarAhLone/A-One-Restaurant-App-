@@ -1,10 +1,8 @@
 package com.example.aonerestaurant.ui.screen.home
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +33,7 @@ import androidx.compose.ui.unit.sp
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.model.SpecialCombo
 import com.example.aonerestaurant.data.repository.RestaurantRepository
-import com.example.aonerestaurant.ui.screen.menu.MenuItemRow
+import com.example.aonerestaurant.ui.components.FloatingCartBar
 import kotlinx.coroutines.launch
 
 @Composable
@@ -58,31 +56,33 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     val allFoodItems = RestaurantRepository.foodItems
-    val filteredItems = remember(selectedCategoryId, searchQuery, allFoodItems.size, allFoodItems.toList()) {
-        allFoodItems.filter { item ->
-            val matchesCategory = item.categoryId == selectedCategoryId
-            val matchesSearch = searchQuery.isBlank() || item.name.contains(searchQuery, ignoreCase = true) || item.description.contains(searchQuery, ignoreCase = true)
-            matchesCategory && matchesSearch
-        }
-    }
-
-    val selectedCategoryName = remember(selectedCategoryId) {
-        RestaurantRepository.categories.find { it.id == selectedCategoryId }?.name ?: "Dishes"
-    }
-
     val todaysSpecialItem = RestaurantRepository.todaysSpecials.firstOrNull() ?: RestaurantRepository.foodItems.firstOrNull()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
-            HomeBottomNavBar(
-                currentTab = activeTab,
-                onTabSelected = { tab ->
-                    activeTab = tab
-                    onNavigateToTab(tab)
+            Column {
+                val totalPrice = RestaurantRepository.foodItems.sumOf { item ->
+                    (cartMap[item.id] ?: 0) * item.price
+                } + RestaurantRepository.specialCombos.sumOf { combo ->
+                    (cartMap[combo.id] ?: 0) * combo.price.toDouble()
                 }
-            )
+
+                FloatingCartBar(
+                    totalCount = cartCount,
+                    totalPrice = totalPrice,
+                    onViewCartClick = onGoToCart
+                )
+
+                HomeBottomNavBar(
+                    currentTab = activeTab,
+                    onTabSelected = { tab ->
+                        activeTab = tab
+                        onNavigateToTab(tab)
+                    }
+                )
+            }
         }
     ) { innerPadding ->
         Column(
@@ -178,56 +178,7 @@ fun HomeScreen(
                     }
                 }
             } else {
-                // 3. Category Specific Dishes Menu List Section
-                if (filteredItems.isNotEmpty()) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "$selectedCategoryName Menu 📋",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFF1D1E2C)
-                            )
-                            Text(
-                                text = "${filteredItems.size} items",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.Gray
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        filteredItems.forEach { item ->
-                            val qty = cartMap[item.id] ?: 0
-                            MenuItemRow(
-                                foodItem = item,
-                                quantity = qty,
-                                onAdd = {
-                                    onAddToCart(item)
-                                    scope.launch {
-                                        snackbarHostState.showSnackbar("Added ${item.name} to cart!")
-                                    }
-                                },
-                                onRemove = {
-                                    onRemoveFromCart(item)
-                                }
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
-                // 4. Popular Items Section
+                // 3. Popular Items Section
                 if (RestaurantRepository.popularItems.isNotEmpty()) {
                     PopularSection(
                         popularItems = RestaurantRepository.popularItems,
@@ -245,7 +196,7 @@ fun HomeScreen(
                     Spacer(modifier = Modifier.height(20.dp))
                 }
 
-                // 5. Special Combos Section
+                // 4. Special Combos Section
                 if (RestaurantRepository.specialCombos.isNotEmpty()) {
                     SpecialComboSection(
                         combos = RestaurantRepository.specialCombos,
