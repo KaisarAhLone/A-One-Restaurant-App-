@@ -32,13 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.aonerestaurant.data.model.FoodItem
+import com.example.aonerestaurant.utils.ItemImageThumbnail
 
 @Composable
 fun HeroBannerCard(
@@ -153,28 +152,20 @@ fun HeroBannerCard(
 
                     Spacer(modifier = Modifier.width(12.dp))
 
+                    // Prominent bigger CIRCULAR photo box (138.dp)
                     Box(
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(138.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF2E0508)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (!specialItem?.imageUri.isNullOrBlank()) {
-                            AsyncImage(
-                                model = specialItem.imageUri,
-                                contentDescription = specialItem.name,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        } else {
-                            Icon(
-                                imageVector = foodIcon,
-                                contentDescription = null,
-                                modifier = Modifier.size(70.dp),
-                                tint = Color(0xFFFFB703)
-                            )
-                        }
+                        ItemImageThumbnail(
+                            imageUri = specialItem?.imageUri,
+                            contentDescription = specialItem?.name,
+                            fallbackIcon = foodIcon,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
                 }
 

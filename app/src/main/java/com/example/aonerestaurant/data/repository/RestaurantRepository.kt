@@ -142,6 +142,15 @@ object RestaurantRepository {
 
     private fun addFoodItemToFirestore(item: FoodItem, onResult: ((Boolean, String) -> Unit)? = null) {
         try {
+            // If new item is set as Today's Special, uncheck isTodaysSpecial on all other existing dishes
+            if (item.isTodaysSpecial) {
+                foodItems.forEach { existing ->
+                    if (existing.id != item.id && existing.isTodaysSpecial) {
+                        db.collection("foodItems").document(existing.id).update("isTodaysSpecial", false)
+                    }
+                }
+            }
+
             val itemMap = hashMapOf(
                 "id" to item.id,
                 "name" to item.name,

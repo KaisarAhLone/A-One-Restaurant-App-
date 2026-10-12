@@ -32,13 +32,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.aonerestaurant.data.model.FoodItem
+import com.example.aonerestaurant.utils.ItemImageThumbnail
 
 @Composable
 fun PopularItemCard(
@@ -67,21 +66,12 @@ fun PopularItemCard(
                     .background(Color(0xFF2A080C)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!foodItem.imageUri.isNullOrBlank()) {
-                    AsyncImage(
-                        model = foodItem.imageUri,
-                        contentDescription = foodItem.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = foodIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(60.dp),
-                        tint = Color(0xFFFFB703)
-                    )
-                }
+                ItemImageThumbnail(
+                    imageUri = foodItem.imageUri,
+                    contentDescription = foodItem.name,
+                    fallbackIcon = foodIcon,
+                    modifier = Modifier.fillMaxSize()
+                )
 
                 if (foodItem.isPopular) {
                     Box(

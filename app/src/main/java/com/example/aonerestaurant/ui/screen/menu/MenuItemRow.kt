@@ -32,13 +32,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.repository.RestaurantRepository
+import com.example.aonerestaurant.utils.ItemImageThumbnail
 
 @Composable
 fun MenuItemRow(
@@ -77,21 +76,12 @@ fun MenuItemRow(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                if (!foodItem.imageUri.isNullOrBlank()) {
-                    AsyncImage(
-                        model = foodItem.imageUri,
-                        contentDescription = foodItem.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = foodIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(36.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                ItemImageThumbnail(
+                    imageUri = foodItem.imageUri,
+                    contentDescription = foodItem.name,
+                    fallbackIcon = foodIcon,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))

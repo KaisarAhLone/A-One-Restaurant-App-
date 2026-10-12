@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,8 +18,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.ShoppingBag
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +27,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -48,6 +44,9 @@ import com.example.aonerestaurant.data.model.FoodCategory
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.repository.MenuRepository
 import com.example.aonerestaurant.data.repository.RestaurantRepository
+import com.example.aonerestaurant.ui.components.FloatingCartBar
+import com.example.aonerestaurant.ui.screen.home.HomeBottomNavBar
+import com.example.aonerestaurant.ui.screen.home.MainTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,7 +58,8 @@ fun MenuScreen(
     onSignOut: () -> Unit,
     modifier: Modifier = Modifier,
     initialCategoryId: String? = null,
-    onBackClick: (() -> Unit)? = null
+    onBackClick: (() -> Unit)? = null,
+    onNavigateToTab: ((MainTab) -> Unit)? = null
 ) {
     var selectedCategoryId by remember(initialCategoryId) { mutableStateOf(initialCategoryId ?: "all") }
 
@@ -110,140 +110,114 @@ fun MenuScreen(
             )
         },
         bottomBar = {
-            if (totalCount > 0) {
-                Surface(
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Button(
-                            onClick = onGoToCart,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.ShoppingBag,
-                                        contentDescription = null
-                                    )
-                                    Text(
-                                        text = " $totalCount items",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
-                                    )
-                                }
-
-                                Text(
-                                    text = "View Cart • ₹${totalPrice.toInt()}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
-                            }
-                        }
-                    }
-                }
+            if (onNavigateToTab != null) {
+                HomeBottomNavBar(
+                    currentTab = MainTab.MENU,
+                    onTabSelected = onNavigateToTab
+                )
             }
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Category Filter Chips
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = PaddingValues(horizontal = 16.dp)
+            Column(
+                modifier = Modifier.fillMaxSize()
             ) {
-                items(allCategories) { category ->
-                    val isSelected = selectedCategoryId == category.id
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = { selectedCategoryId = category.id },
-                        label = { Text(text = category.name) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = category.icon,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        },
-                        colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = MaterialTheme.colorScheme.primary,
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
-                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
-                        )
-                    )
-                }
-            }
-
-            if (displayItems.isEmpty()) {
-                Box(
+                // Category Filter Chips
+                LazyRow(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(24.dp),
-                    contentAlignment = Alignment.Center
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = "No $selectedCategoryName Items Found 🍽️",
-                                fontSize = 18.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                    items(allCategories) { category ->
+                        val isSelected = selectedCategoryId == category.id
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedCategoryId = category.id },
+                            label = { Text(text = category.name) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = category.icon,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "No items added in this category yet. The owner can add new items from the Owner Dashboard!",
-                                fontSize = 13.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                if (displayItems.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "No $selectedCategoryName Items Found 🍽️",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "No items added in this category yet. The owner can add new items from the Owner Dashboard!",
+                                    fontSize = 13.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(displayItems) { item ->
+                            val quantity = cartMap[item.id] ?: 0
+                            MenuItemRow(
+                                foodItem = item,
+                                quantity = quantity,
+                                onAdd = { onAddItem(item) },
+                                onRemove = { onRemoveItem(item) }
                             )
                         }
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(displayItems) { item ->
-                        val quantity = cartMap[item.id] ?: 0
-                        MenuItemRow(
-                            foodItem = item,
-                            quantity = quantity,
-                            onAdd = { onAddItem(item) },
-                            onRemove = { onRemoveItem(item) }
-                        )
-                    }
-                }
             }
+
+            // Floating Cart popup over screen content (NO black background)
+            FloatingCartBar(
+                totalCount = totalCount,
+                totalPrice = totalPrice,
+                onViewCartClick = onGoToCart,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
+            )
         }
     }
 }

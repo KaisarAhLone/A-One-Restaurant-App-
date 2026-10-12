@@ -138,6 +138,14 @@ fun AppNavigation(
                 onBackClick = {
                     currentScreen = Screen.Home
                 },
+                onNavigateToTab = { tab ->
+                    when (tab) {
+                        MainTab.HOME -> currentScreen = Screen.Home
+                        MainTab.MENU -> {}
+                        MainTab.ORDERS -> currentScreen = Screen.Orders
+                        MainTab.PROFILE -> currentScreen = Screen.Profile
+                    }
+                },
                 modifier = modifier
             )
         }
@@ -151,6 +159,9 @@ fun AppNavigation(
                         MainTab.ORDERS -> {}
                         MainTab.PROFILE -> currentScreen = Screen.Profile
                     }
+                },
+                onOrderClick = {
+                    currentScreen = Screen.OrderSuccess
                 },
                 onBackClick = { currentScreen = Screen.Home },
                 modifier = modifier

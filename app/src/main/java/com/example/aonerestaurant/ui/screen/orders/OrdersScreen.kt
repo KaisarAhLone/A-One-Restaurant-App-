@@ -1,6 +1,7 @@
 package com.example.aonerestaurant.ui.screen.orders
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -47,8 +48,9 @@ import java.util.Locale
 @Composable
 fun OrdersScreen(
     onNavigateToTab: (MainTab) -> Unit,
-    onBackClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOrderClick: (Order) -> Unit = {},
+    onBackClick: (() -> Unit)? = null
 ) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -124,7 +126,13 @@ fun OrdersScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(OrderRepository.orders) { order ->
-                    OrderItemRow(order = order)
+                    OrderItemRow(
+                        order = order,
+                        onClick = {
+                            OrderRepository.latestOrder = order
+                            onOrderClick(order)
+                        }
+                    )
                 }
             }
         }
@@ -134,13 +142,17 @@ fun OrdersScreen(
 @Composable
 fun OrderItemRow(
     order: Order,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val dateFormat = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
     val formattedDate = dateFormat.format(Date(order.timestamp))
+    val isDelivered = order.status == "Delivered ✅"
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
@@ -169,14 +181,14 @@ fun OrderItemRow(
 
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFFFF3E0), RoundedCornerShape(20.dp))
+                        .background(if (isDelivered) Color(0xFFE8F5E9) else Color(0xFFFFF3E0), RoundedCornerShape(20.dp))
                         .padding(horizontal = 10.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = order.status,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFFE65100)
+                        color = if (isDelivered) Color(0xFF2E7D32) else Color(0xFFE65100)
                     )
                 }
             }
@@ -204,8 +216,16 @@ fun OrderItemRow(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Text(
+                    text = "Tap to view receipt ➔",
+                    fontSize = 12.sp,
+                    color = Color(0xFF2196F3),
+                    fontWeight = FontWeight.Bold
+                )
+
                 Text(
                     text = "Total Paid: ₹${order.totalAmount.toInt()}",
                     fontWeight = FontWeight.ExtraBold,

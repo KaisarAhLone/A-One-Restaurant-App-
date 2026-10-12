@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,18 +18,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import com.example.aonerestaurant.data.model.SpecialCombo
+import com.example.aonerestaurant.utils.ItemImageThumbnail
 
 @Composable
 fun SpecialComboCard(
@@ -57,21 +54,12 @@ fun SpecialComboCard(
                     .background(Color(0xFF2A080C)),
                 contentAlignment = Alignment.Center
             ) {
-                if (!combo.imageUri.isNullOrBlank()) {
-                    AsyncImage(
-                        model = combo.imageUri,
-                        contentDescription = combo.name,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Icon(
-                        imageVector = Icons.Default.RamenDining,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = Color(0xFFFFB703)
-                    )
-                }
+                ItemImageThumbnail(
+                    imageUri = combo.imageUri,
+                    contentDescription = combo.name,
+                    fallbackIcon = Icons.Default.RamenDining,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
 
             Column(

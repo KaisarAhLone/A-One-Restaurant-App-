@@ -58,161 +58,173 @@ fun HomeScreen(
     val allFoodItems = RestaurantRepository.foodItems
     val todaysSpecialItem = RestaurantRepository.todaysSpecials.firstOrNull() ?: RestaurantRepository.foodItems.firstOrNull()
 
+    val totalPrice = RestaurantRepository.foodItems.sumOf { item ->
+        (cartMap[item.id] ?: 0) * item.price
+    } + RestaurantRepository.specialCombos.sumOf { combo ->
+        (cartMap[combo.id] ?: 0) * combo.price.toDouble()
+    }
+
     Scaffold(
         modifier = modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         bottomBar = {
-            Column {
-                val totalPrice = RestaurantRepository.foodItems.sumOf { item ->
-                    (cartMap[item.id] ?: 0) * item.price
-                } + RestaurantRepository.specialCombos.sumOf { combo ->
-                    (cartMap[combo.id] ?: 0) * combo.price.toDouble()
+            HomeBottomNavBar(
+                currentTab = activeTab,
+                onTabSelected = { tab ->
+                    activeTab = tab
+                    onNavigateToTab(tab)
                 }
-
-                FloatingCartBar(
-                    totalCount = cartCount,
-                    totalPrice = totalPrice,
-                    onViewCartClick = onGoToCart
-                )
-
-                HomeBottomNavBar(
-                    currentTab = activeTab,
-                    onTabSelected = { tab ->
-                        activeTab = tab
-                        onNavigateToTab(tab)
-                    }
-                )
-            }
+            )
         }
     ) { innerPadding ->
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color(0xFFF8F9FA))
-                .verticalScroll(rememberScrollState())
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        Color(0xFF6A040F),
-                        shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
-                    )
+                    .fillMaxSize()
+                    .background(Color(0xFFF8F9FA))
+                    .verticalScroll(rememberScrollState())
             ) {
-                Column {
-                    HomeHeaderBar(
-                        cartCount = cartCount,
-                        onCartClick = onGoToCart,
-                        onNotificationClick = {
-                            scope.launch {
-                                snackbarHostState.showSnackbar("No new notifications")
-                            }
-                        }
-                    )
-
-                    HomeSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it }
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // 1. Hero Banner showing dynamic "Today's Special Offer 👑"
-            HeroBannerCard(
-                specialItem = todaysSpecialItem,
-                onOrderNowClick = { item ->
-                    onAddToCart(item)
-                    scope.launch {
-                        snackbarHostState.showSnackbar("Added ${item.name} to cart!")
-                    }
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // 2. Category Selector (Biryani, Grilled, Fried, Chicken Curry) -> Click opens full Category Menu Page!
-            CategoryRowSection(
-                categories = RestaurantRepository.categories,
-                selectedCategoryId = selectedCategoryId,
-                onCategorySelected = { catId ->
-                    selectedCategoryId = catId
-                    onCategoryClick(catId)
-                }
-            )
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            if (allFoodItems.isEmpty() && RestaurantRepository.specialCombos.isEmpty()) {
-                Card(
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        .background(
+                            Color(0xFF6A040F),
+                            shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+                        )
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Restaurant Menu is Empty 🍽️",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF6A040F)
+                    Column {
+                        HomeHeaderBar(
+                            cartCount = cartCount,
+                            onCartClick = onGoToCart,
+                            onNotificationClick = {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("No new notifications")
+                                }
+                            }
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "No dishes added yet. The restaurant owner can add new items from the Owner Dashboard!",
-                            fontSize = 13.sp,
-                            color = Color.Gray,
-                            textAlign = TextAlign.Center
+
+                        HomeSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it }
                         )
+
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
-            } else {
-                // 3. Popular Items Section
-                if (RestaurantRepository.popularItems.isNotEmpty()) {
-                    PopularSection(
-                        popularItems = RestaurantRepository.popularItems,
-                        onAddToCart = { item ->
-                            onAddToCart(item)
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 1. Hero Banner showing dynamic "Today's Special Offer 👑"
+                HeroBannerCard(
+                    specialItem = todaysSpecialItem,
+                    onOrderNowClick = { item ->
+                        onAddToCart(item)
+                        scope.launch {
+                            snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                        }
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 2. Category Selector (Biryani, Grilled, Fried, Chicken Curry) -> Click opens full Category Menu Page!
+                CategoryRowSection(
+                    categories = RestaurantRepository.categories,
+                    selectedCategoryId = selectedCategoryId,
+                    onCategorySelected = { catId ->
+                        selectedCategoryId = catId
+                        onCategoryClick(catId)
+                    }
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                if (allFoodItems.isEmpty() && RestaurantRepository.specialCombos.isEmpty()) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 24.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Restaurant Menu is Empty 🍽️",
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF6A040F)
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "No dishes added yet. The restaurant owner can add new items from the Owner Dashboard!",
+                                fontSize = 13.sp,
+                                color = Color(0xFF1D1E2C),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    // 3. Popular Items Section
+                    if (RestaurantRepository.popularItems.isNotEmpty()) {
+                        PopularSection(
+                            popularItems = RestaurantRepository.popularItems,
+                            onAddToCart = { item ->
+                                onAddToCart(item)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                                }
+                            },
+                            onSeeAllClick = {
+                                onCategoryClick("all")
+                            },
+                            title = "Popular Items 👑"
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                    }
+
+                    // 4. Special Combos Section
+                    if (RestaurantRepository.specialCombos.isNotEmpty()) {
+                        SpecialComboSection(
+                            combos = RestaurantRepository.specialCombos,
+                            onAddCombo = { combo ->
+                                onAddComboToCart(combo)
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Added ${combo.name} to cart!")
+                                }
+                            },
+                            onSeeAllClick = {
+                                onCategoryClick("all")
                             }
-                        },
-                        onSeeAllClick = {
-                            onCategoryClick("all")
-                        },
-                        title = "Popular Items 👑"
-                    )
-                    Spacer(modifier = Modifier.height(20.dp))
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
                 }
 
-                // 4. Special Combos Section
-                if (RestaurantRepository.specialCombos.isNotEmpty()) {
-                    SpecialComboSection(
-                        combos = RestaurantRepository.specialCombos,
-                        onAddCombo = { combo ->
-                            onAddComboToCart(combo)
-                            scope.launch {
-                                snackbarHostState.showSnackbar("Added ${combo.name} to cart!")
-                            }
-                        },
-                        onSeeAllClick = {
-                            onCategoryClick("all")
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(24.dp))
+                // Padding at bottom for floating cart bar
+                if (cartCount > 0) {
+                    Spacer(modifier = Modifier.height(60.dp))
                 }
             }
+
+            // Floating Cart Popup directly over screen content (NO black background)
+            FloatingCartBar(
+                totalCount = cartCount,
+                totalPrice = totalPrice,
+                onViewCartClick = onGoToCart,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 8.dp)
+            )
         }
     }
 }
