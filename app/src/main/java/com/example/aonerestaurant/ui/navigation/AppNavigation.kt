@@ -21,18 +21,20 @@ import com.example.aonerestaurant.ui.screen.orders.OrdersScreen
 import com.example.aonerestaurant.ui.screen.owner.OwnerDashboardScreen
 import com.example.aonerestaurant.ui.screen.profile.ProfileScreen
 import com.example.aonerestaurant.ui.screen.signup.SignUpScreen
+import com.example.aonerestaurant.ui.screen.splash.SplashScreen
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AppNavigation(
     modifier: Modifier = Modifier
 ) {
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.Login) }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.Splash) }
     val cartMap = remember { mutableStateMapOf<String, Int>() }
 
     val totalCartCount = cartMap.values.sum()
 
     // Smooth system back button navigation
-    BackHandler(enabled = currentScreen != Screen.Home && currentScreen != Screen.Login) {
+    BackHandler(enabled = currentScreen != Screen.Home && currentScreen != Screen.Login && currentScreen != Screen.Splash) {
         currentScreen = when (currentScreen) {
             is Screen.SignUp -> Screen.Login
             is Screen.OwnerDashboard -> Screen.Login
@@ -58,6 +60,20 @@ fun AppNavigation(
     }
 
     when (val screen = currentScreen) {
+        is Screen.Splash -> {
+            SplashScreen(
+                onSplashFinished = {
+                    val user = FirebaseAuth.getInstance().currentUser
+                    if (user != null) {
+                        currentScreen = Screen.Home
+                    } else {
+                        currentScreen = Screen.Login
+                    }
+                },
+                modifier = modifier
+            )
+        }
+
         is Screen.Login -> {
             LoginScreen(
                 onLoginSuccess = { currentScreen = Screen.Home },
@@ -179,6 +195,7 @@ fun AppNavigation(
                     }
                 },
                 onNavigateToOrders = { currentScreen = Screen.Orders },
+                onOwnerPortal = { currentScreen = Screen.OwnerDashboard },
                 onLogout = {
                     cartMap.clear()
                     currentScreen = Screen.Login

@@ -1,0 +1,31 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Golden Circle Outer Border -->
+    <path
+        android:fillColor="#FFB703"
+        android:pathData="M100,10 C149.7,10 190,50.3 190,100 C190,149.7 149.7,190 100,190 C50.3,190 10,149.7 10,100 C10,50.3 50.3,10 100,10 Z" />
+
+    <!-- Inner Dark Maroon Circle -->
+    <path
+        android:fillColor="#6A040F"
+        android:pathData="M100,18 C145.3,18 182,54.7 182,100 C182,145.3 145.3,182 100,182 C54.7,182 18,145.3 18,100 C18,54.7 54.7,18 100,18 Z" />
+
+    <!-- Crown Icon at Top -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M80,55 L88,72 L100,50 L112,72 L120,55 L118,85 L82,85 Z" />
+
+    <!-- Center Food Bowl Graphic -->
+    <path
+        android:fillColor="#FFB703"
+        android:pathData="M60,110 C60,135 140,135 140,110 Z" />
+
+    <!-- Rice / Biryani Flame Accent -->
+    <path
+        android:fillColor="#E60023"
+        android:pathData="M85,100 Q100,80 115,100 Z" />
+</vector>

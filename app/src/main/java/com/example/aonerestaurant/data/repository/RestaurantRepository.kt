@@ -7,6 +7,7 @@ import androidx.compose.material.icons.filled.LocalPizza
 import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.SetMeal
 import androidx.compose.runtime.mutableStateListOf
+import com.example.aonerestaurant.R
 import com.example.aonerestaurant.data.model.FoodCategory
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.model.SpecialCombo
@@ -17,14 +18,76 @@ object RestaurantRepository {
     private val db: FirebaseFirestore by lazy { FirebaseFirestore.getInstance() }
 
     val categories = listOf(
-        FoodCategory("1", "Biryani", Icons.Default.RamenDining),
-        FoodCategory("2", "Grilled", Icons.Default.KebabDining),
-        FoodCategory("3", "Fried", Icons.Default.SetMeal),
-        FoodCategory("4", "Chicken Curry", Icons.Default.LocalPizza)
+        FoodCategory("1", "Biryani", Icons.Default.RamenDining, R.drawable.cat_biryani),
+        FoodCategory("2", "Grilled", Icons.Default.KebabDining, R.drawable.cat_grilled),
+        FoodCategory("3", "Fried Chicken", Icons.Default.SetMeal, R.drawable.cat_fried),
+        FoodCategory("4", "Chicken Curry", Icons.Default.LocalPizza, R.drawable.cat_curry)
     )
 
-    // Empty initial lists - completely empty menu by default
-    val foodItems = mutableStateListOf<FoodItem>()
+    private val defaultFoodItems = listOf(
+        FoodItem(
+            id = "1",
+            name = "Chicken Biryani",
+            price = 120.0,
+            description = "Rich Flavour, Real Taste. Dum cooked fragrant basmati rice with spiced tender chicken leg.",
+            categoryId = "1",
+            rating = 4.9,
+            preparationTime = "15-20 min",
+            isPopular = true,
+            isTodaysSpecial = true,
+            imageUri = "res:dish_chicken_biryani"
+        ),
+        FoodItem(
+            id = "2",
+            name = "Fried Chicken (4 pcs)",
+            price = 180.0,
+            description = "Crispy golden fried chicken pieces, spiced to perfection with secret royal herbs.",
+            categoryId = "3",
+            rating = 4.8,
+            preparationTime = "10-15 min",
+            isPopular = true,
+            isTodaysSpecial = false,
+            imageUri = "res:dish_fried_chicken"
+        ),
+        FoodItem(
+            id = "3",
+            name = "Butter Chicken",
+            price = 200.0,
+            description = "Tender marinated chicken pieces simmered in rich creamy butter tomato gravy.",
+            categoryId = "4",
+            rating = 4.9,
+            preparationTime = "15-20 min",
+            isPopular = true,
+            isTodaysSpecial = false,
+            imageUri = "res:dish_butter_chicken"
+        ),
+        FoodItem(
+            id = "4",
+            name = "Grilled Chicken",
+            price = 220.0,
+            description = "Charcoal grilled juicy chicken marinated in authentic yogurt and spices.",
+            categoryId = "2",
+            rating = 4.7,
+            preparationTime = "20-25 min",
+            isPopular = true,
+            isTodaysSpecial = false,
+            imageUri = "res:cat_grilled"
+        ),
+        FoodItem(
+            id = "5",
+            name = "Chicken Curry",
+            price = 170.0,
+            description = "Homestyle aromatic chicken curry cooked slow in brass handi.",
+            categoryId = "4",
+            rating = 4.6,
+            preparationTime = "15-20 min",
+            isPopular = false,
+            isTodaysSpecial = false,
+            imageUri = "res:cat_curry"
+        )
+    )
+
+    val foodItems = mutableStateListOf<FoodItem>().apply { addAll(defaultFoodItems) }
     val specialCombos = mutableStateListOf<SpecialCombo>()
 
     val popularItems: List<FoodItem>
@@ -88,6 +151,7 @@ object RestaurantRepository {
                                 name = doc.getString("name") ?: "",
                                 description = doc.getString("description") ?: "",
                                 price = doc.getLong("price")?.toInt() ?: 0,
+                                originalPrice = doc.getLong("originalPrice")?.toInt() ?: 0,
                                 imageUri = doc.getString("imageUri")
                             )
                         } catch (e: Exception) {
@@ -101,6 +165,33 @@ object RestaurantRepository {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error initializing Firestore listeners: ${e.message}")
+        }
+    }
+
+    fun togglePopularStatus(foodItem: FoodItem, isPopular: Boolean) {
+        val index = foodItems.indexOfFirst { it.id == foodItem.id }
+        if (index != -1) {
+            val updated = foodItems[index].copy(isPopular = isPopular)
+            foodItems[index] = updated
+            try {
+                db.collection("foodItems").document(foodItem.id).update("isPopular", isPopular)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error updating popular status: ${e.message}")
+            }
+        }
+    }
+
+    fun setTodaysSpecialItem(foodItem: FoodItem) {
+        foodItems.forEachIndexed { idx, item ->
+            val isSpecial = (item.id == foodItem.id)
+            if (item.isTodaysSpecial != isSpecial) {
+                foodItems[idx] = item.copy(isTodaysSpecial = isSpecial)
+                try {
+                    db.collection("foodItems").document(item.id).update("isTodaysSpecial", isSpecial)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error updating todays special status: ${e.message}")
+                }
+            }
         }
     }
 
@@ -186,6 +277,7 @@ object RestaurantRepository {
                 "name" to combo.name,
                 "description" to combo.description,
                 "price" to combo.price,
+                "originalPrice" to combo.originalPrice,
                 "imageUri" to (combo.imageUri ?: "")
             )
             db.collection("specialCombos").document(combo.id).set(comboMap)

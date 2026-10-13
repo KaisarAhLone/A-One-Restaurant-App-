@@ -32,6 +32,8 @@ object OrderRepository {
                             try {
                                 Order(
                                     id = doc.getString("id") ?: doc.id,
+                                    userId = doc.getString("userId") ?: "",
+                                    customerEmail = doc.getString("customerEmail") ?: "",
                                     customerName = doc.getString("customerName") ?: "",
                                     customerPhone = doc.getString("customerPhone") ?: "",
                                     pgHostel = doc.getString("pgHostel") ?: "",
@@ -68,6 +70,8 @@ object OrderRepository {
         try {
             val orderMap = hashMapOf(
                 "id" to order.id,
+                "userId" to order.userId,
+                "customerEmail" to order.customerEmail,
                 "customerName" to order.customerName,
                 "customerPhone" to order.customerPhone,
                 "pgHostel" to order.pgHostel,

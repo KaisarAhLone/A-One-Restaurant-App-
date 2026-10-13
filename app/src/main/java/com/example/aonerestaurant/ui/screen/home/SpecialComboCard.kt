@@ -22,8 +22,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aonerestaurant.data.model.SpecialCombo
@@ -35,6 +37,9 @@ fun SpecialComboCard(
     onAddClick: (SpecialCombo) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val origPrice = if (combo.originalPrice > combo.price) combo.originalPrice else (combo.price * 1.25).toInt()
+    val discountPercent = if (origPrice > combo.price) (((origPrice - combo.price).toFloat() / origPrice) * 100).toInt() else 0
+
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -50,7 +55,7 @@ fun SpecialComboCard(
             Box(
                 modifier = Modifier
                     .width(130.dp)
-                    .height(110.dp)
+                    .height(115.dp)
                     .background(Color(0xFF2A080C)),
                 contentAlignment = Alignment.Center
             ) {
@@ -60,6 +65,23 @@ fun SpecialComboCard(
                     fallbackIcon = Icons.Default.RamenDining,
                     modifier = Modifier.fillMaxSize()
                 )
+
+                if (discountPercent > 0) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .clip(RoundedCornerShape(bottomEnd = 10.dp))
+                            .background(Color(0xFFD90429))
+                            .padding(horizontal = 6.dp, vertical = 3.dp)
+                    ) {
+                        Text(
+                            text = "$discountPercent% OFF",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                    }
+                }
             }
 
             Column(
@@ -79,7 +101,8 @@ fun SpecialComboCard(
                 Text(
                     text = combo.description,
                     fontSize = 11.sp,
-                    color = Color.White.copy(alpha = 0.9f)
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White.copy(alpha = 0.95f)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -89,12 +112,26 @@ fun SpecialComboCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "₹${combo.price}",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = Color.White
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "₹${combo.price}",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+
+                        Spacer(modifier = Modifier.width(6.dp))
+
+                        if (origPrice > combo.price) {
+                            Text(
+                                text = "₹$origPrice",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White.copy(alpha = 0.6f),
+                                textDecoration = TextDecoration.LineThrough
+                            )
+                        }
+                    }
 
                     Button(
                         onClick = { onAddClick(combo) },

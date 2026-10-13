@@ -1,6 +1,7 @@
 package com.example.aonerestaurant.ui.navigation
 
 sealed class Screen {
+    data object Splash : Screen()
     data object Login : Screen()
     data object SignUp : Screen()
     data object Home : Screen()

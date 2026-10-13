@@ -91,9 +91,34 @@ fun ItemImageThumbnail(
         }
     }
 
+    val localResId = remember(imageUri, contentDescription) {
+        when {
+            imageUri == "res:dish_chicken_biryani" -> com.example.aonerestaurant.R.drawable.dish_chicken_biryani
+            imageUri == "res:dish_fried_chicken" -> com.example.aonerestaurant.R.drawable.dish_fried_chicken
+            imageUri == "res:dish_butter_chicken" -> com.example.aonerestaurant.R.drawable.dish_butter_chicken
+            imageUri == "res:cat_grilled" -> com.example.aonerestaurant.R.drawable.cat_grilled
+            imageUri == "res:cat_curry" -> com.example.aonerestaurant.R.drawable.cat_curry
+            imageUri == "res:cat_biryani" -> com.example.aonerestaurant.R.drawable.cat_biryani
+            imageUri == "res:special_offer_biryani" -> com.example.aonerestaurant.R.drawable.special_offer_biryani
+            contentDescription?.contains("biryani", ignoreCase = true) == true -> com.example.aonerestaurant.R.drawable.dish_chicken_biryani
+            contentDescription?.contains("fried", ignoreCase = true) == true -> com.example.aonerestaurant.R.drawable.dish_fried_chicken
+            contentDescription?.contains("butter", ignoreCase = true) == true -> com.example.aonerestaurant.R.drawable.dish_butter_chicken
+            contentDescription?.contains("curry", ignoreCase = true) == true -> com.example.aonerestaurant.R.drawable.dish_butter_chicken
+            contentDescription?.contains("grilled", ignoreCase = true) == true -> com.example.aonerestaurant.R.drawable.cat_grilled
+            else -> null
+        }
+    }
+
     if (bitmap != null) {
         Image(
             bitmap = bitmap.asImageBitmap(),
+            contentDescription = contentDescription,
+            contentScale = contentScale,
+            modifier = modifier
+        )
+    } else if (localResId != null) {
+        Image(
+            painter = androidx.compose.ui.res.painterResource(id = localResId),
             contentDescription = contentDescription,
             contentScale = contentScale,
             modifier = modifier

@@ -71,7 +71,9 @@ import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.model.Order
 import com.example.aonerestaurant.data.repository.AddressRepository
 import com.example.aonerestaurant.data.repository.OrderRepository
+import com.example.aonerestaurant.data.repository.UserPreferences
 import com.example.aonerestaurant.ui.components.CustomButton
+import com.google.firebase.auth.FirebaseAuth
 import java.net.URLEncoder
 import java.util.Locale
 
@@ -107,6 +109,22 @@ fun CartScreen(
     val subtotal = cartItems.sumOf { it.quantity * it.foodItem.price }
     val deliveryFee = if (cartItems.isNotEmpty()) 0.0 else 0.0
     val total = subtotal + deliveryFee
+
+    fun getQuantityEmoji(qty: Int): String {
+        return when (qty) {
+            1 -> "1️⃣"
+            2 -> "2️⃣"
+            3 -> "3️⃣"
+            4 -> "4️⃣"
+            5 -> "5️⃣"
+            6 -> "6️⃣"
+            7 -> "7️⃣"
+            8 -> "8️⃣"
+            9 -> "9️⃣"
+            10 -> "🔟"
+            else -> "${qty}️⃣"
+        }
+    }
 
     fun fetchCurrentLocationAndSetAddress() {
         val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
@@ -529,11 +547,25 @@ fun CartScreen(
                         }
 
                         val summary = cartItems.joinToString("\n") {
-                            val imgText = if (!it.foodItem.imageUri.isNullOrBlank()) " [🖼️ ${it.foodItem.name}]" else ""
-                            "• ${it.quantity}x ${it.foodItem.name} (₹${(it.quantity * it.foodItem.price).toInt()})$imgText"
+                            val qtyEmoji = getQuantityEmoji(it.quantity)
+                            "🔴 $qtyEmoji x ${it.foodItem.name} (₹${(it.quantity * it.foodItem.price).toInt()})"
                         }
+                        val currentUser = FirebaseAuth.getInstance().currentUser
+                        val currentUserId = currentUser?.uid ?: ""
+                        val currentEmail = currentUser?.email ?: ""
+
+                        UserPreferences.saveUserPhone(context, customerPhone)
+                        if (customerName.isNotBlank()) {
+                            UserPreferences.saveUserName(context, customerName)
+                        }
+                        if (currentEmail.isNotBlank()) {
+                            UserPreferences.saveUserEmail(context, currentEmail)
+                        }
+
                         val newOrder = Order(
                             id = "ORD_" + System.currentTimeMillis().toString(),
+                            userId = currentUserId,
+                            customerEmail = currentEmail,
                             customerName = customerName,
                             customerPhone = customerPhone,
                             pgHostel = pgHostel,
@@ -545,18 +577,17 @@ fun CartScreen(
                         )
                         OrderRepository.placeOrder(newOrder)
 
-                        // Format WhatsApp order message exactly matching the requested image format
+                        // Format WhatsApp order message with requested item line style (🔴 2️⃣ x hhj (₹0)) and chicken leg emoji 🍗
                         try {
                             val mapsUrl = "https://www.google.com/maps/search/?api=1&query=${URLEncoder.encode(deliveryAddress, "UTF-8")}"
 
                             val waMsg = """
-                                🍔 *NEW ORDER RECEIVED - AOne Restaurant* 🍔
+                                🍗 *NEW ORDER RECEIVED - AOne Restaurant* 🍗
 
                                 *Ordered Items:*
                                 $summary
 
                                 💰 *Grand Total: ₹${total.toInt()}*
-                                (Delivery Fee: ₹0 FREE)
 
                                 *Customer & Delivery Info:*
                                 👤 *Name:* $customerName

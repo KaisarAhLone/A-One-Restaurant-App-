@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.model.SpecialCombo
 import com.example.aonerestaurant.data.repository.RestaurantRepository
@@ -51,6 +53,7 @@ fun HomeScreen(
     var searchQuery by remember { mutableStateOf("") }
     var selectedCategoryId by remember { mutableStateOf("1") }
     var activeTab by remember { mutableStateOf(MainTab.HOME) }
+    var showAboutDialog by remember { mutableStateOf(false) }
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -58,10 +61,27 @@ fun HomeScreen(
     val allFoodItems = RestaurantRepository.foodItems
     val todaysSpecialItem = RestaurantRepository.todaysSpecials.firstOrNull() ?: RestaurantRepository.foodItems.firstOrNull()
 
+    val filteredItems = remember(searchQuery, allFoodItems.size) {
+        if (searchQuery.isBlank()) {
+            RestaurantRepository.popularItems.ifEmpty { allFoodItems }
+        } else {
+            allFoodItems.filter {
+                it.name.contains(searchQuery, ignoreCase = true) ||
+                it.description.contains(searchQuery, ignoreCase = true)
+            }
+        }
+    }
+
     val totalPrice = RestaurantRepository.foodItems.sumOf { item ->
         (cartMap[item.id] ?: 0) * item.price
     } + RestaurantRepository.specialCombos.sumOf { combo ->
         (cartMap[combo.id] ?: 0) * combo.price.toDouble()
+    }
+
+    if (showAboutDialog) {
+        AboutRestaurantDialog(
+            onDismiss = { showAboutDialog = false }
+        )
     }
 
     Scaffold(
@@ -85,53 +105,62 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color(0xFFF8F9FA))
+                    .background(Color(0xFFF9F9FB))
                     .verticalScroll(rememberScrollState())
             ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            Color(0xFF6A040F),
-                            shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
-                        )
-                ) {
-                    Column {
+                // 1. Top Header Banner — red box contains ONLY the header image.
+                //    Search bar is placed OUTSIDE the red box using a Box overlay with
+                //    a negative offset, so no red strip is visible below the search bar.
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    // Red header background — height = just HomeHeaderBar's intrinsic height
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                Color(0xFF6A040F),
+                                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
+                            )
+                    ) {
                         HomeHeaderBar(
                             cartCount = cartCount,
                             onCartClick = onGoToCart,
-                            onNotificationClick = {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("No new notifications")
-                                }
+                            onProfileClick = {
+                                showAboutDialog = true
                             }
                         )
-
-                        HomeSearchBar(
-                            query = searchQuery,
-                            onQueryChange = { searchQuery = it }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
                     }
+
+                    // Search bar overlaps the bottom edge of the red header,
+                    // floating half-in half-out with a nice shadow effect.
+                    // zIndex ensures it renders on top of the header.
+                    HomeSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { searchQuery = it },
+                        onFilterClick = { onCategoryClick("all") },
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .offset(y = 28.dp)
+                            .zIndex(2f)
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                // Gap so content starts below the floating search bar
+                Spacer(modifier = Modifier.height(36.dp))
 
-                // 1. Hero Banner showing dynamic "Today's Special Offer 👑"
+                // 2. Hero Special Offer Banner Card (Crown, Chicken Biryani, ₹120, 20% OFF, Biryani image, dots)
                 HeroBannerCard(
                     specialItem = todaysSpecialItem,
                     onOrderNowClick = { item ->
                         onAddToCart(item)
                         scope.launch {
-                            snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                            snackbarHostState.showSnackbar("Added ${item.name} to cart! 🍗")
                         }
                     }
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 2. Category Selector (Biryani, Grilled, Fried, Chicken Curry) -> Click opens full Category Menu Page!
+                // 3. Categories Row (Biryani selected with pink/red card, Grilled, Fried Chicken, Chicken Curry)
                 CategoryRowSection(
                     categories = RestaurantRepository.categories,
                     selectedCategoryId = selectedCategoryId,
@@ -174,14 +203,14 @@ fun HomeScreen(
                         }
                     }
                 } else {
-                    // 3. Popular Items Section
+                    // 4. Popular Items 👑 Section
                     if (RestaurantRepository.popularItems.isNotEmpty()) {
                         PopularSection(
-                            popularItems = RestaurantRepository.popularItems,
+                            popularItems = filteredItems,
                             onAddToCart = { item ->
                                 onAddToCart(item)
                                 scope.launch {
-                                    snackbarHostState.showSnackbar("Added ${item.name} to cart!")
+                                    snackbarHostState.showSnackbar("Added ${item.name} to cart! 🍽️")
                                 }
                             },
                             onSeeAllClick = {
@@ -192,8 +221,8 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.height(20.dp))
                     }
 
-                    // 4. Special Combos Section
-                    if (RestaurantRepository.specialCombos.isNotEmpty()) {
+                    // 5. Special Combos Section (if available)
+                    if (RestaurantRepository.specialCombos.isNotEmpty() && searchQuery.isBlank()) {
                         SpecialComboSection(
                             combos = RestaurantRepository.specialCombos,
                             onAddCombo = { combo ->
@@ -213,10 +242,12 @@ fun HomeScreen(
                 // Padding at bottom for floating cart bar
                 if (cartCount > 0) {
                     Spacer(modifier = Modifier.height(60.dp))
+                } else {
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
             }
 
-            // Floating Cart Popup directly over screen content (NO black background)
+            // Floating Cart Popup directly over screen content
             FloatingCartBar(
                 totalCount = cartCount,
                 totalPrice = totalPrice,

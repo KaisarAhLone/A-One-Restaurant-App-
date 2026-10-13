@@ -2,6 +2,8 @@ package com.example.aonerestaurant.data.model
 
 data class Order(
     val id: String = "",
+    val userId: String = "",
+    val customerEmail: String = "",
     val customerName: String = "",
     val customerPhone: String = "",
     val pgHostel: String = "",

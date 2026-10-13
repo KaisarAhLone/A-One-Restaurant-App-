@@ -1,0 +1,26 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="100dp"
+    android:viewportWidth="300"
+    android:viewportHeight="100">
+
+    <!-- Dark Maroon Background Box -->
+    <path
+        android:fillColor="#6A040F"
+        android:pathData="M0,0 H300 V100 H0 Z" />
+
+    <!-- Golden Crown Top Center -->
+    <path
+        android:fillColor="#FFD700"
+        android:pathData="M135,12 L142,28 L150,8 L158,28 L165,12 L162,38 L138,38 Z" />
+
+    <!-- Food Bowl Base -->
+    <path
+        android:fillColor="#FFB703"
+        android:pathData="M110,65 C110,85 190,85 190,65 Z" />
+
+    <!-- Crimson Flame Accent -->
+    <path
+        android:fillColor="#E60023"
+        android:pathData="M135,55 Q150,38 165,55 Z" />
+</vector>

@@ -1,6 +1,7 @@
 package com.example.aonerestaurant.ui.screen.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,18 +17,18 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
-import androidx.compose.material.icons.filled.KebabDining
-import androidx.compose.material.icons.filled.LocalPizza
-import androidx.compose.material.icons.filled.RamenDining
-import androidx.compose.material.icons.filled.SetMeal
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,83 +46,67 @@ fun PopularItemCard(
     onAddToCart: (FoodItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val foodIcon = when (foodItem.categoryId) {
-        "2" -> Icons.Default.KebabDining
-        "3" -> Icons.Default.SetMeal
-        "4" -> Icons.Default.LocalPizza
-        else -> Icons.Default.RamenDining
-    }
+    var isFavorite by remember { mutableStateOf(false) }
 
     Card(
-        modifier = modifier.width(160.dp),
-        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.width(148.dp),
+        shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
     ) {
         Column {
+            // Food Image with Floating Heart Outline
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(110.dp)
-                    .background(Color(0xFF2A080C)),
-                contentAlignment = Alignment.Center
+                    .height(118.dp)
+                    .background(Color(0xFF2A080C))
             ) {
                 ItemImageThumbnail(
                     imageUri = foodItem.imageUri,
                     contentDescription = foodItem.name,
-                    fallbackIcon = foodIcon,
-                    modifier = Modifier.fillMaxSize()
+                    fallbackIcon = Icons.Default.Restaurant,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp))
                 )
 
-                if (foodItem.isPopular) {
-                    Box(
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .clip(RoundedCornerShape(bottomEnd = 12.dp))
-                            .background(Color(0xFFD90429))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = "Most 👑\nPopular",
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            lineHeight = 10.sp
-                        )
-                    }
-                }
-
+                // White floating heart outline top right
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(6.dp)
+                        .padding(8.dp)
                         .size(28.dp)
                         .clip(CircleShape)
-                        .background(Color.White),
+                        .background(Color.Black.copy(alpha = 0.25f))
+                        .clickable { isFavorite = !isFavorite },
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FavoriteBorder,
-                        contentDescription = null,
-                        tint = Color(0xFF1D1E2C),
-                        modifier = Modifier.size(16.dp)
+                        imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favorite",
+                        tint = if (isFavorite) Color(0xFFD90429) else Color.White,
+                        modifier = Modifier.size(17.dp)
                     )
                 }
             }
 
+            // Food Name & Price with Red Circular "+" Button
             Column(
-                modifier = Modifier.padding(10.dp)
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
             ) {
                 Text(
                     text = foodItem.name,
-                    fontSize = 14.sp,
+                    fontSize = 13.5.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF1D1E2C),
-                    maxLines = 1,
+                    maxLines = 2,
+                    minLines = 2,
+                    lineHeight = 16.sp,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -131,22 +116,24 @@ fun PopularItemCard(
                     Text(
                         text = "₹${foodItem.price.toInt()}",
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        fontWeight = FontWeight.Black,
                         color = Color(0xFFD90429)
                     )
 
-                    IconButton(
-                        onClick = { onAddToCart(foodItem) },
-                        modifier = Modifier.size(30.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = Color(0xFFD90429),
-                            contentColor = Color.White
-                        )
+                    // Red Circular Button with White "+"
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFD90429))
+                            .clickable { onAddToCart(foodItem) },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                            contentDescription = "Add to Cart",
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
                 }

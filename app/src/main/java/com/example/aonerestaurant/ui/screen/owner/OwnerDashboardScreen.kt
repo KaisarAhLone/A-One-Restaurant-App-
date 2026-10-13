@@ -1,10 +1,12 @@
 package com.example.aonerestaurant.ui.screen.owner
 
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
@@ -33,10 +36,13 @@ import androidx.compose.material.icons.filled.LocalOffer
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Whatshot
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -45,12 +51,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -77,15 +87,25 @@ fun OwnerDashboardScreen(
 ) {
     val context = LocalContext.current
 
+    var activeTab by remember { mutableStateOf(0) } // 0 = Single Dish, 1 = Special Combo Package
+
+    // Single Dish Form State
     var itemName by remember { mutableStateOf("") }
     var itemPrice by remember { mutableStateOf("") }
     var itemDesc by remember { mutableStateOf("") }
-
-    // Category Selection: default Biryani ("1")
     var selectedCategoryId by remember { mutableStateOf("1") }
-
-    // Photo Selection (Base64 JPEG string for cross-phone Firebase sync)
     var selectedImageUri by remember { mutableStateOf<String?>(null) }
+
+    // Special Combo Package Builder State
+    var comboName by remember { mutableStateOf("") }
+    var comboPrice by remember { mutableStateOf("") }
+    var comboNotes by remember { mutableStateOf("") }
+    var comboImageUri by remember { mutableStateOf<String?>(null) }
+    val selectedComboDishIds = remember { mutableStateListOf<String>() }
+
+    // Dialog States for Popular & Today's Special Selection
+    var showPopularDialog by remember { mutableStateOf(false) }
+    var showSpecialDialog by remember { mutableStateOf(false) }
 
     var successMessage by remember { mutableStateOf("") }
 
@@ -94,12 +114,17 @@ fun OwnerDashboardScreen(
     ) { uri: Uri? ->
         uri?.let {
             val base64Compressed = ImageUtils.uriToBase64Compressed(context, it)
-            selectedImageUri = base64Compressed ?: it.toString()
+            if (activeTab == 0) {
+                selectedImageUri = base64Compressed ?: it.toString()
+            } else {
+                comboImageUri = base64Compressed ?: it.toString()
+            }
         }
     }
 
     val selectedCategory = RestaurantRepository.categories.find { it.id == selectedCategoryId }
     val isFormValid = itemName.isNotBlank() && itemPrice.isNotBlank()
+    val isComboFormValid = comboName.isNotBlank() && comboPrice.isNotBlank() && selectedComboDishIds.isNotEmpty()
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
@@ -136,318 +161,489 @@ fun OwnerDashboardScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            // Mode Selector Tabs (Single Dish vs Combo Package)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+                Button(
+                    onClick = { activeTab = 0 },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (activeTab == 0) Color(0xFF6A040F) else Color(0xFFE0E0E0),
+                        contentColor = if (activeTab == 0) Color.White else Color.Black
+                    )
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(text = "🍽️ Add / Select Dish", fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = { activeTab = 1 },
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (activeTab == 1) Color(0xFF2E7D32) else Color(0xFFE0E0E0),
+                        contentColor = if (activeTab == 1) Color.White else Color.Black
+                    )
+                ) {
+                    Text(text = "🍱 Combo Builder", fontWeight = FontWeight.Bold)
+                }
+            }
+
+            if (activeTab == 0) {
+                // TAB 0: Single Dish Form & Quick Select Buttons
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Restaurant,
-                            contentDescription = null,
-                            tint = Color(0xFF6A040F),
-                            modifier = Modifier.size(28.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Add Real Item to Customer App",
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFF1D1E2C)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    OutlinedTextField(
-                        value = itemName,
-                        onValueChange = { itemName = it },
-                        label = { Text(text = "Item Name (e.g., Chicken Biryani, Butter Curry)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    OutlinedTextField(
-                        value = itemPrice,
-                        onValueChange = { itemPrice = it },
-                        label = { Text(text = "Price in ₹ (e.g., 220)") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    OutlinedTextField(
-                        value = itemDesc,
-                        onValueChange = { itemDesc = it },
-                        label = { Text(text = "Description (Taste / Quantity)") },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 1. Category Selection
-                    Text(
-                        text = "1. Select Category (Biryani, Curry, Grilled, Fried)",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6A040F)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        RestaurantRepository.categories.forEach { category ->
-                            val isSelected = selectedCategoryId == category.id
-                            FilterChip(
-                                selected = isSelected,
-                                onClick = { selectedCategoryId = category.id },
-                                label = { Text(text = category.name) },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = category.icon,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                },
-                                colors = FilterChipDefaults.filterChipColors(
-                                    selectedContainerColor = Color(0xFF6A040F),
-                                    selectedLabelColor = Color.White,
-                                    selectedLeadingIconColor = Color.White
-                                )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // 2. Photo Upload Option
-                    Text(
-                        text = "2. Add Item Photo (Cross-Device Compressed)",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6A040F)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (selectedImageUri == null) {
-                        OutlinedButton(
-                            onClick = { photoPickerLauncher.launch("image/*") },
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Default.AddPhotoAlternate,
-                                contentDescription = null
+                                imageVector = Icons.Default.Restaurant,
+                                contentDescription = null,
+                                tint = Color(0xFF6A040F),
+                                modifier = Modifier.size(28.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "Choose Photo from Phone Gallery")
-                        }
-                    } else {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
-                        ) {
-                            ItemImageThumbnail(
-                                imageUri = selectedImageUri,
-                                contentDescription = "Item Photo",
-                                modifier = Modifier.fillMaxSize()
+                            Text(
+                                text = "Add Real Item to Customer App",
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1D1E2C)
                             )
+                        }
 
-                            IconButton(
-                                onClick = { selectedImageUri = null },
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(8.dp)
-                                    .background(Color.Black.copy(alpha = 0.6f), CircleShape)
-                                    .size(32.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Remove photo",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(18.dp)
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = itemName,
+                            onValueChange = { itemName = it },
+                            label = { Text(text = "Item Name (e.g., Chicken Biryani, Butter Curry)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = itemPrice,
+                            onValueChange = { itemPrice = it },
+                            label = { Text(text = "Price in ₹ (e.g., 220)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = itemDesc,
+                            onValueChange = { itemDesc = it },
+                            label = { Text(text = "Description (Taste / Quantity)") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "1. Select Category (Biryani, Curry, Grilled, Fried)",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF6A040F)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            RestaurantRepository.categories.forEach { category ->
+                                val isSelected = selectedCategoryId == category.id
+                                FilterChip(
+                                    selected = isSelected,
+                                    onClick = { selectedCategoryId = category.id },
+                                    label = { Text(text = category.name) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = category.icon,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        selectedContainerColor = Color(0xFF6A040F),
+                                        selectedLabelColor = Color.White,
+                                        selectedLeadingIconColor = Color.White
+                                    )
                                 )
                             }
                         }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "2. Add Item Photo (Cross-Device Compressed)",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF6A040F)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (selectedImageUri == null) {
+                            OutlinedButton(
+                                onClick = { photoPickerLauncher.launch("image/*") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddPhotoAlternate,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "Choose Photo from Phone Gallery")
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
+                            ) {
+                                ItemImageThumbnail(
+                                    imageUri = selectedImageUri,
+                                    contentDescription = "Item Photo",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                IconButton(
+                                    onClick = { selectedImageUri = null },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(8.dp)
+                                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                        .size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Remove photo",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        Text(
+                            text = "3. Add New Item or Manage Special Sections:",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF6A040F)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(
+                            onClick = {
+                                val priceVal = itemPrice.toDoubleOrNull() ?: 0.0
+                                val newItem = FoodItem(
+                                    id = System.currentTimeMillis().toString(),
+                                    name = itemName,
+                                    price = priceVal,
+                                    description = itemDesc,
+                                    categoryId = selectedCategoryId,
+                                    imageUri = selectedImageUri
+                                )
+                                RestaurantRepository.addFoodItem(newItem)
+                                successMessage = "Added '$itemName' to ${selectedCategory?.name} Category!"
+                                itemName = ""; itemPrice = ""; itemDesc = ""; selectedImageUri = null
+                            },
+                            enabled = isFormValid,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D1E2C))
+                        ) {
+                            Icon(imageVector = Icons.Default.Restaurant, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "➕ Add to ${selectedCategory?.name ?: "Category"} Menu", fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // SELECT POPULAR ITEMS BUTTON
+                        Button(
+                            onClick = {
+                                showPopularDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD90429))
+                        ) {
+                            Icon(imageVector = Icons.Default.Star, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "👑 Select Popular Items from Live Menu", fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        // SELECT TODAY'S SPECIAL BUTTON
+                        Button(
+                            onClick = {
+                                showSpecialDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100))
+                        ) {
+                            Icon(imageVector = Icons.Default.Whatshot, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "🔥 Select Today's Special Offer from Menu", fontWeight = FontWeight.Bold)
+                        }
                     }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // 3. Dedicated Direct Action Buttons
-                    Text(
-                        text = "3. Choose Where to Publish Item in App:",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFF6A040F)
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    // Button 1: Add Category Dish
-                    Button(
-                        onClick = {
-                            val priceVal = itemPrice.toDoubleOrNull() ?: 0.0
-                            val newItem = FoodItem(
-                                id = System.currentTimeMillis().toString(),
-                                name = itemName,
-                                price = priceVal,
-                                description = itemDesc,
-                                categoryId = selectedCategoryId,
-                                imageUri = selectedImageUri
-                            )
-                            RestaurantRepository.addFoodItem(newItem)
-                            successMessage = "Added '$itemName' to ${selectedCategory?.name} Category!"
-                            itemName = ""; itemPrice = ""; itemDesc = ""; selectedImageUri = null
-                        },
-                        enabled = isFormValid,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1D1E2C))
+                }
+            } else {
+                // TAB 1: Special Combo Builder (Group Existing Menu Items)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.Restaurant, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "➕ Add to ${selectedCategory?.name ?: "Category"} Menu", fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Button 2: Add Popular Item
-                    Button(
-                        onClick = {
-                            val priceVal = itemPrice.toDoubleOrNull() ?: 0.0
-                            val newItem = FoodItem(
-                                id = System.currentTimeMillis().toString(),
-                                name = itemName,
-                                price = priceVal,
-                                description = itemDesc,
-                                categoryId = selectedCategoryId,
-                                isPopular = true,
-                                imageUri = selectedImageUri
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.LocalOffer,
+                                contentDescription = null,
+                                tint = Color(0xFF2E7D32),
+                                modifier = Modifier.size(28.dp)
                             )
-                            RestaurantRepository.addFoodItem(newItem)
-                            successMessage = "Added '$itemName' to Popular Items section!"
-                            itemName = ""; itemPrice = ""; itemDesc = ""; selectedImageUri = null
-                        },
-                        enabled = isFormValid,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD90429))
-                    ) {
-                        Icon(imageVector = Icons.Default.Star, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "👑 Add to Popular Items Section", fontWeight = FontWeight.Bold)
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Button 3: Add Today's Special
-                    Button(
-                        onClick = {
-                            val priceVal = itemPrice.toDoubleOrNull() ?: 0.0
-                            val newItem = FoodItem(
-                                id = System.currentTimeMillis().toString(),
-                                name = itemName,
-                                price = priceVal,
-                                description = itemDesc,
-                                categoryId = selectedCategoryId,
-                                isTodaysSpecial = true,
-                                imageUri = selectedImageUri
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Build Special Combo Package 🍱",
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1D1E2C)
                             )
-                            RestaurantRepository.addFoodItem(newItem)
-                            successMessage = "Set '$itemName' as Today's Special Offer!"
-                            itemName = ""; itemPrice = ""; itemDesc = ""; selectedImageUri = null
-                        },
-                        enabled = isFormValid,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE65100))
-                    ) {
-                        Icon(imageVector = Icons.Default.Whatshot, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "🔥 Set as Today's Special Offer", fontWeight = FontWeight.Bold)
-                    }
+                        }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    // Button 4: Add Special Combo
-                    Button(
-                        onClick = {
-                            val priceVal = itemPrice.toIntOrNull() ?: (itemPrice.toDoubleOrNull()?.toInt() ?: 0)
-                            val newCombo = SpecialCombo(
-                                id = "combo_" + System.currentTimeMillis().toString(),
-                                name = itemName + " Combo",
-                                description = itemDesc.ifBlank { "$itemName Combo Offer" },
-                                price = priceVal,
-                                imageUri = selectedImageUri
+                        OutlinedTextField(
+                            value = comboName,
+                            onValueChange = { comboName = it },
+                            label = { Text(text = "Combo Package Name (e.g., Mega Feast Deal)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = comboPrice,
+                            onValueChange = { comboPrice = it },
+                            label = { Text(text = "Combo Discount Offer Price in ₹ (e.g., 299)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = comboNotes,
+                            onValueChange = { comboNotes = it },
+                            label = { Text(text = "Combo Notes (e.g., Free Cold Drink & Chutney)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Select Items from Live Menu to Include in Combo:",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        val selectedDishesList = RestaurantRepository.foodItems.filter { selectedComboDishIds.contains(it.id) }
+                        val actualTotalSum = selectedDishesList.sumOf { it.price.toInt() }
+
+                        if (selectedDishesList.isNotEmpty()) {
+                            Text(
+                                text = "Original Actual Total Price of Selected Dishes: ₹$actualTotalSum",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFFD90429)
                             )
-                            RestaurantRepository.addSpecialCombo(newCombo)
-                            successMessage = "Published '$itemName Combo' in Special Combos section!"
-                            itemName = ""; itemPrice = ""; itemDesc = ""; selectedImageUri = null
-                        },
-                        enabled = isFormValid,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
-                    ) {
-                        Icon(imageVector = Icons.Default.LocalOffer, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "🍱 Add to Special Combos Section", fontWeight = FontWeight.Bold)
-                    }
+                            Spacer(modifier = Modifier.height(6.dp))
+                        }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Button 5: Add Everywhere (Category + Popular + Today's Special + Combo)
-                    Button(
-                        onClick = {
-                            val priceVal = itemPrice.toDoubleOrNull() ?: 0.0
-                            val newItem = FoodItem(
-                                id = System.currentTimeMillis().toString(),
-                                name = itemName,
-                                price = priceVal,
-                                description = itemDesc,
-                                categoryId = selectedCategoryId,
-                                isPopular = true,
-                                isTodaysSpecial = true,
-                                isCombo = true,
-                                imageUri = selectedImageUri
+                        if (RestaurantRepository.foodItems.isEmpty()) {
+                            Text(
+                                text = "No menu items available yet! Please add menu dishes first in Tab 1.",
+                                fontSize = 13.sp,
+                                color = Color.Red,
+                                fontWeight = FontWeight.SemiBold
                             )
-                            RestaurantRepository.addFoodItem(newItem)
+                        } else {
+                            RestaurantRepository.foodItems.forEach { foodItem ->
+                                val isChecked = selectedComboDishIds.contains(foodItem.id)
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            if (isChecked) selectedComboDishIds.remove(foodItem.id)
+                                            else selectedComboDishIds.add(foodItem.id)
+                                        }
+                                        .padding(vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Checkbox(
+                                        checked = isChecked,
+                                        onCheckedChange = { checked ->
+                                            if (checked) selectedComboDishIds.add(foodItem.id)
+                                            else selectedComboDishIds.remove(foodItem.id)
+                                        },
+                                        colors = CheckboxDefaults.colors(checkedColor = Color(0xFF2E7D32))
+                                    )
 
-                            val comboItem = SpecialCombo(
-                                id = "combo_" + System.currentTimeMillis().toString(),
-                                name = itemName + " Special Combo",
-                                description = itemDesc.ifBlank { "$itemName Combo Deal" },
-                                price = priceVal.toInt(),
-                                imageUri = selectedImageUri
-                            )
-                            RestaurantRepository.addSpecialCombo(comboItem)
+                                    Spacer(modifier = Modifier.width(8.dp))
 
-                            successMessage = "Published '$itemName' across All Sections (Category + Popular + Special + Combos)!"
-                            itemName = ""; itemPrice = ""; itemDesc = ""; selectedImageUri = null
-                        },
-                        enabled = isFormValid,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6A040F))
-                    ) {
-                        Text(text = "🚀 Publish Everywhere (All Sections)", fontWeight = FontWeight.Bold)
+                                    Column {
+                                        Text(
+                                            text = foodItem.name,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 15.sp,
+                                            color = Color(0xFF1D1E2C)
+                                        )
+                                        Text(
+                                            text = "₹${foodItem.price.toInt()} • ${foodItem.description}",
+                                            fontSize = 12.sp,
+                                            color = Color.Gray
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Text(
+                            text = "Add Combo Cover Photo (Optional):",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2E7D32)
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (comboImageUri == null) {
+                            OutlinedButton(
+                                onClick = { photoPickerLauncher.launch("image/*") },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.AddPhotoAlternate,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(text = "Choose Photo for Combo")
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(150.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color.Gray, RoundedCornerShape(12.dp))
+                            ) {
+                                ItemImageThumbnail(
+                                    imageUri = comboImageUri,
+                                    contentDescription = "Combo Photo",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+
+                                IconButton(
+                                    onClick = { comboImageUri = null },
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(8.dp)
+                                        .background(Color.Black.copy(alpha = 0.6f), CircleShape)
+                                        .size(32.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Remove photo",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Publish Combo Button
+                        Button(
+                            onClick = {
+                                val offerPriceVal = comboPrice.toIntOrNull() ?: 0
+                                val selectedDishes = RestaurantRepository.foodItems.filter { selectedComboDishIds.contains(it.id) }
+                                val selectedDishNames = selectedDishes.joinToString(" + ") { it.name }
+                                val sumActualPrice = selectedDishes.sumOf { it.price.toInt() }
+
+                                val finalComboDesc = if (comboNotes.isNotBlank()) {
+                                    "• $selectedDishNames ($comboNotes)"
+                                } else {
+                                    "• $selectedDishNames"
+                                }
+
+                                // Auto-use image of first selected dish if comboImageUri is null
+                                val finalImage = comboImageUri ?: selectedDishes.firstOrNull()?.imageUri
+
+                                val newCombo = SpecialCombo(
+                                    id = "combo_" + System.currentTimeMillis().toString(),
+                                    name = comboName,
+                                    description = finalComboDesc,
+                                    price = offerPriceVal,
+                                    originalPrice = if (sumActualPrice > offerPriceVal) sumActualPrice else (offerPriceVal * 1.25).toInt(),
+                                    imageUri = finalImage
+                                )
+
+                                RestaurantRepository.addSpecialCombo(newCombo)
+                                successMessage = "Published '$comboName' Combo Package ($selectedDishNames) for ₹$offerPriceVal (Actual: ₹$sumActualPrice)!"
+                                comboName = ""; comboPrice = ""; comboNotes = ""; comboImageUri = null
+                                selectedComboDishIds.clear()
+                            },
+                            enabled = isComboFormValid,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                        ) {
+                            Icon(imageVector = Icons.Default.LocalOffer, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = "🍱 Publish Special Combo Deal", fontWeight = FontWeight.Bold, color = Color.White)
+                        }
                     }
                 }
             }
@@ -628,7 +824,7 @@ fun OwnerDashboardScreen(
                                             fontSize = 15.sp
                                         )
                                         Text(
-                                            text = "${combo.description} • ₹${combo.price}",
+                                            text = "${combo.description} • ₹${combo.price} (Was ₹${combo.originalPrice})",
                                             fontSize = 12.sp,
                                             color = Color.Gray
                                         )
@@ -657,5 +853,108 @@ fun OwnerDashboardScreen(
                 }
             }
         }
+    }
+
+    // DIALOG 1: SELECT POPULAR ITEMS
+    if (showPopularDialog) {
+        AlertDialog(
+            onDismissRequest = { showPopularDialog = false },
+            title = { Text("Select Popular Items 👑", fontWeight = FontWeight.Bold, color = Color(0xFFD90429)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    Text("Check the dishes you want to feature in the 'Popular Items' section on Home Screen:", fontSize = 13.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    RestaurantRepository.foodItems.forEach { foodItem ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    RestaurantRepository.togglePopularStatus(foodItem, !foodItem.isPopular)
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = foodItem.isPopular,
+                                onCheckedChange = { checked ->
+                                    RestaurantRepository.togglePopularStatus(foodItem, checked)
+                                },
+                                colors = CheckboxDefaults.colors(checkedColor = Color(0xFFD90429))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(foodItem.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("₹${foodItem.price.toInt()}", fontSize = 12.sp, color = Color.Gray)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPopularDialog = false
+                        Toast.makeText(context, "Popular Items updated! 👑", Toast.LENGTH_SHORT).show()
+                    }
+                ) {
+                    Text("Done", fontWeight = FontWeight.Bold, color = Color(0xFFD90429))
+                }
+            }
+        )
+    }
+
+    // DIALOG 2: SELECT TODAY'S SPECIAL
+    if (showSpecialDialog) {
+        AlertDialog(
+            onDismissRequest = { showSpecialDialog = false },
+            title = { Text("Select Today's Special Offer 🔥", fontWeight = FontWeight.Bold, color = Color(0xFFE65100)) },
+            text = {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState())
+                ) {
+                    Text("Select ONE dish to feature in the main hero banner on Home Screen:", fontSize = 13.sp, color = Color.Gray)
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    RestaurantRepository.foodItems.forEach { foodItem ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    RestaurantRepository.setTodaysSpecialItem(foodItem)
+                                    showSpecialDialog = false
+                                    Toast.makeText(context, "Set '${foodItem.name}' as Today's Special! 🔥", Toast.LENGTH_SHORT).show()
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = foodItem.isTodaysSpecial,
+                                onClick = {
+                                    RestaurantRepository.setTodaysSpecialItem(foodItem)
+                                    showSpecialDialog = false
+                                    Toast.makeText(context, "Set '${foodItem.name}' as Today's Special! 🔥", Toast.LENGTH_SHORT).show()
+                                },
+                                colors = RadioButtonDefaults.colors(selectedColor = Color(0xFFE65100))
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(foodItem.name, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text("₹${foodItem.price.toInt()} • ${foodItem.description}", fontSize = 12.sp, color = Color.Gray)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { showSpecialDialog = false }
+                ) {
+                    Text("Cancel", fontWeight = FontWeight.Bold)
+                }
+            }
+        )
     }
 }

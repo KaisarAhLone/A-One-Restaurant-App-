@@ -1,6 +1,8 @@
 package com.example.aonerestaurant.ui.screen.menu
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,27 +14,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KebabDining
-import androidx.compose.material.icons.filled.LocalPizza
-import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.SetMeal
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aonerestaurant.data.model.FoodItem
@@ -47,68 +46,114 @@ fun MenuItemRow(
     onRemove: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val categoryName = RestaurantRepository.categories.find { it.id == foodItem.categoryId }?.name ?: "Dish"
-    val foodIcon = when (foodItem.categoryId) {
-        "2" -> Icons.Default.KebabDining
-        "3" -> Icons.Default.SetMeal
-        "4" -> Icons.Default.LocalPizza
-        else -> Icons.Default.RamenDining
-    }
+    val categoryName = RestaurantRepository.categories.find { it.id == foodItem.categoryId }?.name ?: "Special"
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        )
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.5.dp)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // Left Food Thumbnail
             Box(
                 modifier = Modifier
-                    .size(70.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
+                    .size(90.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF280306))
             ) {
                 ItemImageThumbnail(
                     imageUri = foodItem.imageUri,
                     contentDescription = foodItem.name,
-                    fallbackIcon = foodIcon,
+                    fallbackIcon = Icons.Default.Restaurant,
                     modifier = Modifier.fillMaxSize()
                 )
+
+                // Rating pill badge on bottom left of image
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black.copy(alpha = 0.65f))
+                        .padding(horizontal = 5.dp, vertical = 2.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Star,
+                            contentDescription = null,
+                            tint = Color(0xFFFFB703),
+                            modifier = Modifier.size(10.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            text = String.format(java.util.Locale.US, "%.1f", foodItem.rating),
+                            fontSize = 9.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
+            // Center: Details
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                Text(
-                    text = foodItem.name,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                // Non-veg symbol + Category
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(13.dp)
+                            .border(1.dp, Color(0xFFD90429), RoundedCornerShape(2.dp))
+                            .padding(2.5.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFD90429))
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    Text(
+                        text = categoryName,
+                        fontSize = 11.sp,
+                        color = Color(0xFF6A040F),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(3.dp))
 
                 Text(
-                    text = "Category: $categoryName",
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
+                    text = foodItem.name,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1D1E2C),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
                     text = foodItem.description,
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    fontSize = 11.5.sp,
+                    color = Color(0xFF757575),
+                    maxLines = 2,
+                    lineHeight = 15.sp,
+                    overflow = TextOverflow.Ellipsis
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
@@ -116,55 +161,76 @@ fun MenuItemRow(
                 Text(
                     text = "₹${foodItem.price.toInt()}",
                     fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.primary
+                    fontWeight = FontWeight.Black,
+                    color = Color(0xFFD90429)
                 )
             }
 
-            Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(8.dp))
 
+            // Right: Add or Quantity Counter
             if (quantity > 0) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(Color(0xFFFDE8E8))
+                        .padding(horizontal = 4.dp, vertical = 2.dp)
                 ) {
-                    IconButton(
-                        onClick = onRemove,
-                        modifier = Modifier.height(36.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFD90429))
+                            .clickable { onRemove() },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Remove,
-                            contentDescription = null
+                            contentDescription = "Decrease",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
 
                     Text(
                         text = quantity.toString(),
-                        fontSize = 16.sp,
+                        fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 8.dp)
+                        color = Color(0xFFD90429),
+                        modifier = Modifier.padding(horizontal = 10.dp)
                     )
 
-                    IconButton(
-                        onClick = onAdd,
-                        modifier = Modifier.height(36.dp)
+                    Box(
+                        modifier = Modifier
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFFD90429))
+                            .clickable { onAdd() },
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
-                            contentDescription = null
+                            contentDescription = "Increase",
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }
             } else {
-                OutlinedButton(
-                    onClick = onAdd,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.primary
-                    )
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(Color(0xFFD90429))
+                        .clickable { onAdd() }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "ADD",
-                        fontWeight = FontWeight.Bold
+                        text = "ADD +",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
                     )
                 }
             }
