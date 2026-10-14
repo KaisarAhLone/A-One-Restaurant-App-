@@ -3,6 +3,7 @@ package com.example.aonerestaurant.ui.screen.login
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,14 +34,17 @@ import com.example.aonerestaurant.R
 
 @Composable
 fun LoginHeader(
+    onLogoClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Glowing circular logo with Crown Badge
-        Box {
+        // Glowing circular logo with Crown Badge - Tapping opens Owner Portal
+        Box(
+            modifier = Modifier.clickable { onLogoClick() }
+        ) {
             Box(
                 modifier = Modifier
                     .size(115.dp)

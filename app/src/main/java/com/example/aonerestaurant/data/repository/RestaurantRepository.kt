@@ -3,6 +3,7 @@ package com.example.aonerestaurant.data.repository
 import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KebabDining
+import androidx.compose.material.icons.filled.LocalDrink
 import androidx.compose.material.icons.filled.LocalPizza
 import androidx.compose.material.icons.filled.RamenDining
 import androidx.compose.material.icons.filled.SetMeal
@@ -19,9 +20,10 @@ object RestaurantRepository {
 
     val categories = listOf(
         FoodCategory("1", "Biryani", Icons.Default.RamenDining, R.drawable.cat_biryani),
-        FoodCategory("2", "Grilled", Icons.Default.KebabDining, R.drawable.cat_grilled),
         FoodCategory("3", "Fried Chicken", Icons.Default.SetMeal, R.drawable.cat_fried),
-        FoodCategory("4", "Chicken Curry", Icons.Default.LocalPizza, R.drawable.cat_curry)
+        FoodCategory("4", "Chicken Curry", Icons.Default.LocalPizza, R.drawable.cat_curry),
+        FoodCategory("2", "Grilled", Icons.Default.KebabDining, R.drawable.cat_grilled),
+        FoodCategory("5", "Cold Drink", Icons.Default.LocalDrink)
     )
 
     private val defaultFoodItems = listOf(
@@ -84,6 +86,18 @@ object RestaurantRepository {
             isPopular = false,
             isTodaysSpecial = false,
             imageUri = "res:cat_curry"
+        ),
+        FoodItem(
+            id = "6",
+            name = "Chilled Cold Drink",
+            price = 40.0,
+            description = "Refreshing chilled carbonated beverage (300ml).",
+            categoryId = "5",
+            rating = 4.9,
+            preparationTime = "2 min",
+            isPopular = false,
+            isTodaysSpecial = false,
+            imageUri = "res:cat_cold_drink"
         )
     )
 

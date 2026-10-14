@@ -583,7 +583,7 @@ fun CartScreen(
 
                             val waMsg = """
                                 🍗 *NEW ORDER RECEIVED - AOne Restaurant* 🍗
-
+reload
                                 *Ordered Items:*
                                 $summary
 

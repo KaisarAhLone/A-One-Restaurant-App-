@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.zIndex
 import com.example.aonerestaurant.data.model.FoodItem
 import com.example.aonerestaurant.data.model.SpecialCombo
 import com.example.aonerestaurant.data.repository.RestaurantRepository
@@ -108,19 +106,16 @@ fun HomeScreen(
                     .background(Color(0xFFF9F9FB))
                     .verticalScroll(rememberScrollState())
             ) {
-                // 1. Top Header Banner — red box contains ONLY the header image.
-                //    Search bar is placed OUTSIDE the red box using a Box overlay with
-                //    a negative offset, so no red strip is visible below the search bar.
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    // Red header background — height = just HomeHeaderBar's intrinsic height
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                Color(0xFF6A040F),
-                                shape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
-                            )
-                    ) {
+                // 1. Top Header Banner — red box contains both Header and Search Bar smoothly
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            Color(0xFF6A040F),
+                            shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+                        )
+                ) {
+                    Column {
                         HomeHeaderBar(
                             cartCount = cartCount,
                             onCartClick = onGoToCart,
@@ -128,24 +123,19 @@ fun HomeScreen(
                                 showAboutDialog = true
                             }
                         )
-                    }
 
-                    // Search bar overlaps the bottom edge of the red header,
-                    // floating half-in half-out with a nice shadow effect.
-                    // zIndex ensures it renders on top of the header.
-                    HomeSearchBar(
-                        query = searchQuery,
-                        onQueryChange = { searchQuery = it },
-                        onFilterClick = { onCategoryClick("all") },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .offset(y = 28.dp)
-                            .zIndex(2f)
-                    )
+                        HomeSearchBar(
+                            query = searchQuery,
+                            onQueryChange = { searchQuery = it },
+                            onFilterClick = {
+                                onCategoryClick("all")
+                            },
+                            modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
+                        )
+                    }
                 }
 
-                // Gap so content starts below the floating search bar
-                Spacer(modifier = Modifier.height(36.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // 2. Hero Special Offer Banner Card (Crown, Chicken Biryani, ₹120, 20% OFF, Biryani image, dots)
                 HeroBannerCard(
@@ -160,7 +150,7 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 3. Categories Row (Biryani selected with pink/red card, Grilled, Fried Chicken, Chicken Curry)
+                // 3. Categories Row (Biryani -> Fried Chicken -> Chicken Curry -> Grilled -> Cold Drink)
                 CategoryRowSection(
                     categories = RestaurantRepository.categories,
                     selectedCategoryId = selectedCategoryId,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -38,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.google.firebase.auth.FirebaseAuth
 
 @Composable
@@ -98,21 +100,25 @@ fun LoginScreen(
             )
         }
 
-        // Hidden owner portal button (top-right, transparent)
+        // Owner Portal Admin Shield Icon Button (Top-Right)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(8.dp)
+                .padding(12.dp)
                 .align(Alignment.TopEnd)
+                .zIndex(10f)
         ) {
             IconButton(
                 onClick = { showOwnerDialog = true },
-                modifier = Modifier.align(Alignment.TopEnd)
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.Default.AdminPanelSettings,
-                    contentDescription = "Owner Login",
-                    tint = Color.Transparent
+                    contentDescription = "Owner Portal",
+                    tint = Color(0xFFFFB703),
+                    modifier = Modifier.size(32.dp)
                 )
             }
         }
@@ -126,8 +132,10 @@ fun LoginScreen(
         ) {
             Spacer(modifier = Modifier.height(48.dp))
 
-            // Colorful header with logo and crown
-            LoginHeader()
+            // Colorful header with logo and crown - tapping logo/crown opens owner portal!
+            LoginHeader(
+                onLogoClick = { showOwnerDialog = true }
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
